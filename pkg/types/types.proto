@@ -45,6 +45,24 @@ message WorkflowSpec {
 
     // Internal indicates whether is a workflow should be visible to a human (default) or not.
     bool internal = 7;
+
+    // Added with DataFlow privacy extension, specifies weather for the given //
+    // tasks data privacy measures should be taken. Such as verifying consent and
+    // generating provenance data
+    // PrivacySpec privacy = 8;
+    DataFlow dataflow = 8;
+}
+
+//
+// Dataflow specific customisations
+//
+
+message DataFlow {
+
+    // Indicates if consent should be verified before tasks are invoked at each
+    // stage of the workflow
+    bool consentCheck = 1;
+    // TODO: add country data locking field
 }
 
 message WorkflowStatus {
@@ -168,6 +186,7 @@ message TaskSpec {
     // It overrides the deadline specified by the workflow invocation, but cannot exceed it. If set, this field will be
     // used in the task invocation spec to compute the deadline.
     google.protobuf.Duration timeout = 7;
+
 }
 
 message TaskStatus {
@@ -298,4 +317,22 @@ message TypedValueMap {
 // Utility wrapper for a TypedValue list
 message TypedValueList {
     repeated TypedValue Value = 1;
+}
+
+// An enum describing the current status of a users consent
+message ConsentStatus {
+  enum Status {
+    GRANTED = 0;
+    REVOKED = 1;
+    PAUSED = 2;
+  }
+  Status status = 1;
+}
+
+
+// Consent message describes the status of consent for a particular individual
+// as identified by the id field
+message ConsentMessage {
+  string id = 1;
+  ConsentStatus status = 2;
 }

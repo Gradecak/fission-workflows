@@ -484,7 +484,7 @@ func RegisterWorkflowAPIHandler(ctx context.Context, mux *runtime.ServeMux, conn
 func RegisterWorkflowAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client WorkflowAPIClient) error {
 
 	mux.Handle("POST", pattern_WorkflowAPI_Create_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -513,7 +513,7 @@ func RegisterWorkflowAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux
 	})
 
 	mux.Handle("POST", pattern_WorkflowAPI_CreateSync_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -542,7 +542,7 @@ func RegisterWorkflowAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux
 	})
 
 	mux.Handle("GET", pattern_WorkflowAPI_List_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -571,7 +571,7 @@ func RegisterWorkflowAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux
 	})
 
 	mux.Handle("GET", pattern_WorkflowAPI_Get_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -600,7 +600,7 @@ func RegisterWorkflowAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux
 	})
 
 	mux.Handle("DELETE", pattern_WorkflowAPI_Delete_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -629,7 +629,7 @@ func RegisterWorkflowAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux
 	})
 
 	mux.Handle("POST", pattern_WorkflowAPI_Validate_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -658,7 +658,7 @@ func RegisterWorkflowAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux
 	})
 
 	mux.Handle("GET", pattern_WorkflowAPI_Events_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -760,7 +760,7 @@ func RegisterWorkflowInvocationAPIHandler(ctx context.Context, mux *runtime.Serv
 func RegisterWorkflowInvocationAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client WorkflowInvocationAPIClient) error {
 
 	mux.Handle("POST", pattern_WorkflowInvocationAPI_Invoke_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -789,7 +789,7 @@ func RegisterWorkflowInvocationAPIHandlerClient(ctx context.Context, mux *runtim
 	})
 
 	mux.Handle("POST", pattern_WorkflowInvocationAPI_InvokeSync_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -818,7 +818,7 @@ func RegisterWorkflowInvocationAPIHandlerClient(ctx context.Context, mux *runtim
 	})
 
 	mux.Handle("GET", pattern_WorkflowInvocationAPI_InvokeSync_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -847,7 +847,7 @@ func RegisterWorkflowInvocationAPIHandlerClient(ctx context.Context, mux *runtim
 	})
 
 	mux.Handle("POST", pattern_WorkflowInvocationAPI_AddTask_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -876,7 +876,7 @@ func RegisterWorkflowInvocationAPIHandlerClient(ctx context.Context, mux *runtim
 	})
 
 	mux.Handle("PUT", pattern_WorkflowInvocationAPI_AddTask_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -905,7 +905,7 @@ func RegisterWorkflowInvocationAPIHandlerClient(ctx context.Context, mux *runtim
 	})
 
 	mux.Handle("DELETE", pattern_WorkflowInvocationAPI_Cancel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -934,7 +934,7 @@ func RegisterWorkflowInvocationAPIHandlerClient(ctx context.Context, mux *runtim
 	})
 
 	mux.Handle("GET", pattern_WorkflowInvocationAPI_List_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -963,7 +963,7 @@ func RegisterWorkflowInvocationAPIHandlerClient(ctx context.Context, mux *runtim
 	})
 
 	mux.Handle("GET", pattern_WorkflowInvocationAPI_Get_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -992,7 +992,7 @@ func RegisterWorkflowInvocationAPIHandlerClient(ctx context.Context, mux *runtim
 	})
 
 	mux.Handle("GET", pattern_WorkflowInvocationAPI_Events_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -1021,7 +1021,7 @@ func RegisterWorkflowInvocationAPIHandlerClient(ctx context.Context, mux *runtim
 	})
 
 	mux.Handle("POST", pattern_WorkflowInvocationAPI_Validate_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -1135,7 +1135,7 @@ func RegisterAdminAPIHandler(ctx context.Context, mux *runtime.ServeMux, conn *g
 func RegisterAdminAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client AdminAPIClient) error {
 
 	mux.Handle("GET", pattern_AdminAPI_Status_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {
@@ -1164,7 +1164,7 @@ func RegisterAdminAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 	})
 
 	mux.Handle("GET", pattern_AdminAPI_Version_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
 			go func(done <-chan struct{}, closed <-chan bool) {

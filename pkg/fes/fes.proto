@@ -22,7 +22,8 @@ message Event {
     map<string, string> metadata = 8;
 }
 
-// EventHints is a collection of optional metadata that help components in the event store to improve performance.
+// EventHints is a collection of optional metadata that help components in the
+//event store to improve performance.
 message EventHints {
     bool completed = 1;
 }

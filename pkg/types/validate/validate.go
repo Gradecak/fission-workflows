@@ -34,6 +34,7 @@ var (
 	ErrNoWorkflow                   = errors.New("workflow id is required")
 	ErrNoID                         = errors.New("id is required")
 	ErrNoStatus                     = errors.New("status is required")
+	ErrPrivacyDisabled              = errors.New("privacy field is set to false")
 )
 
 type Error struct {
