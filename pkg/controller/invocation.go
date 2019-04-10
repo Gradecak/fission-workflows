@@ -34,6 +34,7 @@ type InvocationController struct {
 	executor      *executor.LocalExecutor
 	invocationAPI *api.Invocation
 	taskAPI       *api.Task
+	consentAPI    *api.Consent
 	scheduler     *scheduler.InvocationScheduler
 	StateStore    *expr.Store // Future: just grab the initial state of the parent, instead of constantly rebuilding it.
 	span          opentracing.Span
@@ -45,13 +46,14 @@ type InvocationController struct {
 
 func NewInvocationController(invocationID string, executor *executor.LocalExecutor, invocationAPI *api.Invocation,
 	taskAPI *api.Task, scheduler *scheduler.InvocationScheduler, stateStore *expr.Store,
-	span opentracing.Span, logger *logrus.Entry) *InvocationController {
+	span opentracing.Span, logger *logrus.Entry, consentAPI *api.Consent) *InvocationController {
 
 	return &InvocationController{
 		invocationID:  invocationID,
 		executor:      executor,
 		invocationAPI: invocationAPI,
 		taskAPI:       taskAPI,
+		consentAPI:    consentAPI,
 		scheduler:     scheduler,
 		StateStore:    stateStore,
 		span:          span,
@@ -98,6 +100,9 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 			return ctrl.Success{}
 		}
 	}
+
+	//Consent Check
+	c.consentAPI.QueryWorkflowConsent(invocation)
 
 	// Check if the invocation is not in a terminal state
 	if invocation.GetStatus().Finished() {
@@ -534,7 +539,7 @@ type InvocationMetaController struct {
 
 func NewInvocationMetaController(executor *executor.LocalExecutor, invocations *store.Invocations,
 	invocationAPI *api.Invocation, taskAPI *api.Task, scheduler *scheduler.InvocationScheduler, stateStore *expr.Store,
-	cachePollInterval time.Duration) *InvocationMetaController {
+	cachePollInterval time.Duration, consentAPI *api.Consent) *InvocationMetaController {
 	c := &InvocationMetaController{
 		executor:    executor,
 		runOnce:     &sync.Once{},
@@ -555,7 +560,7 @@ func NewInvocationMetaController(executor *executor.LocalExecutor, invocations *
 				return nil, fmt.Errorf("invocation ID missing in event: %v %v", event.Aggregate, event.Event.GetType())
 			}
 			return NewInvocationController(invocationID, executor, invocationAPI, taskAPI, scheduler,
-				stateStore, span, logrus.WithField("key", invocationID)), nil
+				stateStore, span, logrus.WithField("key", invocationID), consentAPI), nil
 		}),
 	}
 	c.sensors = []ctrl.Sensor{

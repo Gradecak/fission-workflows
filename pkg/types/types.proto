@@ -49,20 +49,27 @@ message WorkflowSpec {
     // Added with DataFlow privacy extension, specifies weather for the given //
     // tasks data privacy measures should be taken. Such as verifying consent and
     // generating provenance data
-    // PrivacySpec privacy = 8;
-    DataFlow dataflow = 8;
+    DataFlowSpec dataflow = 8;
 }
 
 //
 // Dataflow specific customisations
 //
 
-message DataFlow {
+message DataFlowSpec {
 
     // Indicates if consent should be verified before tasks are invoked at each
     // stage of the workflow
-    bool consentCheck = 1;
+    ConsentSpec consent = 1;
     // TODO: add country data locking field
+}
+
+message ConsentSpec {
+    // list of named id inputs to compare against consent store
+    // e.g. <customername, John>, <
+    //map<string,string> input_ids = 1;
+    // TODO possibly look into more then one field as per above comment
+    string input_id = 1;
 }
 
 message WorkflowStatus {
@@ -321,18 +328,18 @@ message TypedValueList {
 
 // An enum describing the current status of a users consent
 message ConsentStatus {
-  enum Status {
-    GRANTED = 0;
-    REVOKED = 1;
-    PAUSED = 2;
-  }
-  Status status = 1;
+    enum Status {
+        GRANTED = 0;
+        REVOKED = 1;
+        PAUSED = 2;
+    }
+    Status status = 1;
 }
 
 
 // Consent message describes the status of consent for a particular individual
 // as identified by the id field
 message ConsentMessage {
-  string id = 1;
-  ConsentStatus status = 2;
+    string id = 1;
+    ConsentStatus status = 2;
 }

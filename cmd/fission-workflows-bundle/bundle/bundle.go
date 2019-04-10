@@ -14,6 +14,7 @@ import (
 	"github.com/fission/fission-workflows/pkg/api/projectors"
 	"github.com/fission/fission-workflows/pkg/api/store"
 	"github.com/fission/fission-workflows/pkg/apiserver"
+	consentBE "github.com/fission/fission-workflows/pkg/consent/backend/mem"
 	"github.com/fission/fission-workflows/pkg/controller"
 	"github.com/fission/fission-workflows/pkg/controller/executor"
 	"github.com/fission/fission-workflows/pkg/controller/expr"
@@ -503,10 +504,11 @@ func setupInvocationController(invocations *store.Invocations, es fes.Backend,
 	workflowAPI := api.NewWorkflowAPI(es, fnenv.NewMetaResolver(fnResolvers))
 	invocationAPI := api.NewInvocationAPI(es)
 	dynamicAPI := api.NewDynamicApi(workflowAPI, invocationAPI)
+	consentAPI := api.NewConsentAPI(consentBE.NewConsentStore())
 	taskAPI := api.NewTaskAPI(fnRuntimes, es, dynamicAPI)
 	stateStore := expr.NewStore()
 	localExec := executor.NewLocalExecutor(executorMaxParallelism, executorMaxTaskQueueSize)
-	return controller.NewInvocationMetaController(localExec, invocations, invocationAPI, taskAPI, s, stateStore, invocationStorePollInterval)
+	return controller.NewInvocationMetaController(localExec, invocations, invocationAPI, taskAPI, s, stateStore, invocationStorePollInterval, consentAPI)
 }
 
 func setupWorkflowController(store *store.Workflows, es fes.Backend,
