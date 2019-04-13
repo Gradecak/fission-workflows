@@ -101,8 +101,32 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 		}
 	}
 
-	//Consent Check
-	c.consentAPI.QueryWorkflowConsent(invocation)
+	// If consent check is required, ensure that the invocation spec
+	// features consentId field and that the value in the field has not been
+	// revoked when retrieved from consent store
+	if invocation.GetDataflowSpec().GetConsentCheck() {
+		var err Error = nil
+
+		if len(invocation.GetSpec().GetConsentId()) < 1 {
+			err = errors.New("ConsentId missing from workflow invocation")
+		} else {
+			consentStatus := c.consentAPI.QueryWorkflowConsent(invocation.GetSpec())
+			if !consentStatus.Permitted() {
+				err = errors.New("Consent revoked for id " + invocation.GetSpec().GetConsentId())
+			}
+		}
+
+		//if we should fail the task based on the consent
+		if err != nil {
+			c.executor.Submit(&executor.Task{
+				TaskID:  invocation.ID() + ".fail",
+				GroupID: invocation.ID(),
+				Apply: func() error {
+					return c.invocationAPI.Fail(invocation.ID(), err)
+				},
+			})
+		}
+	}
 
 	// Check if the invocation is not in a terminal state
 	if invocation.GetStatus().Finished() {

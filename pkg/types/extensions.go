@@ -13,6 +13,8 @@ const (
 	InputQuery   = "query"
 	InputMethod  = "method"
 	InputParent  = "_parent"
+	//Dataflow consent input
+	InputConsent = "_consent"
 
 	typedValueShortMaxLen = 32
 	WorkflowAPIVersion    = "v1"
@@ -62,6 +64,10 @@ func (m *WorkflowInvocation) Type() string {
 
 func (m *WorkflowInvocation) Workflow() *Workflow {
 	return m.GetSpec().GetWorkflow()
+}
+
+func (m *WorkflowInvocation) GetDataflowSpec() *DataFlowSpec {
+	return m.GetSpec().GetWorkflow().GetSpec().GetDataflow()
 }
 
 // TODO how do we know which tasks are not being run
@@ -379,4 +385,14 @@ func (m *WorkflowStatus) AddTask(id string, t *Task) {
 		m.Tasks = map[string]*Task{}
 	}
 	m.Tasks[id] = t
+}
+
+//Consent Status
+
+func (cs *ConsentStatus) Permitted() bool {
+	stat := cs.GetStatus()
+	if stat == ConsentStatus_REVOKED || stat == ConsentStatus_PAUSED {
+		return false
+	}
+	return true
 }

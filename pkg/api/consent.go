@@ -31,11 +31,8 @@ func (capi *Consent) Listen(ctx context.Context) {
 
 // Given the workflow paramaters, resolve the inputs and return the consent
 // ConsentStatus of the workflow
-func (capi *Consent) QueryWorkflowConsent(invocation *types.WorkflowInvocation) (types.ConsentStatus, error) {
-	inputs, err := typedvalues.UnwrapMapTypedValue(invocation.GetSpec().GetInputs())
-	if err != nil {
-		log.Error("POOO")
-	}
-	log.Debug(inputs)
-	return types.ConsentStatus{types.ConsentStatus_GRANTED}, nil
+func (capi *Consent) QueryWorkflowConsent(spec *types.WorkflowInvocationSpec) (types.ConsentStatus, error) {
+	consentId := spec.GetConsentId()
+	status := cs.Get(consentId)
+	return status, nil
 }

@@ -13,6 +13,8 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	//temp
+	"github.com/sirupsen/logrus"
 )
 
 // TODO set original content type as metadata
@@ -119,9 +121,11 @@ func (m *JSONMapper) Parse(mt *mediatype.MediaType, reader io.Reader) (*typedval
 
 	// We borrow the proto parameter to do type inference
 	if msgName, ok := mt.Parameters[messageTypeParam]; ok {
+		logrus.Info("using proto paramater")
 		// try to use type
 		tv, err := m.parseJSONWithType(data, msgName)
 		if err != nil {
+			logrus.Debug(err.Error())
 			return nil, err
 		}
 		return tv, nil
@@ -130,6 +134,7 @@ func (m *JSONMapper) Parse(mt *mediatype.MediaType, reader io.Reader) (*typedval
 	// Alternatively, we use JSON's dynamic structure
 	var i interface{}
 	err = json.Unmarshal(data, &i)
+	logrus.Debug(i)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

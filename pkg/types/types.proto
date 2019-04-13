@@ -46,30 +46,21 @@ message WorkflowSpec {
     // Internal indicates whether is a workflow should be visible to a human (default) or not.
     bool internal = 7;
 
-    // Added with DataFlow privacy extension, specifies weather for the given //
+    // Added with DataFlow privacy extension, specifies weather for the given
     // tasks data privacy measures should be taken. Such as verifying consent and
-    // generating provenance data
+    // generating provenance data or region locking the execution of workflow
     DataFlowSpec dataflow = 8;
 }
 
 //
-// Dataflow specific customisations
+// Dataflow specific configurations
 //
-
 message DataFlowSpec {
 
     // Indicates if consent should be verified before tasks are invoked at each
     // stage of the workflow
-    ConsentSpec consent = 1;
+    bool consentCheck = 1;
     // TODO: add country data locking field
-}
-
-message ConsentSpec {
-    // list of named id inputs to compare against consent store
-    // e.g. <customername, John>, <
-    //map<string,string> input_ids = 1;
-    // TODO possibly look into more then one field as per above comment
-    string input_id = 1;
 }
 
 message WorkflowStatus {
@@ -122,6 +113,11 @@ message WorkflowInvocationSpec {
     // Each invocation has a deadline. If no deadline is provided Fission Workflows uses a default deadline (typically
     // 10 minutes).
     google.protobuf.Timestamp Deadline = 5;
+
+    // The value to look up in the consent store (extracted from x-consent)
+    // header. If the dataflow spec calls for a consent check this field is
+    // required to proceed with an invocation
+    string consentId = 6;
 }
 
 message WorkflowInvocationStatus {

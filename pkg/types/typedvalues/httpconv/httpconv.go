@@ -109,6 +109,16 @@ func FormatResponse(w http.ResponseWriter, output *typedvalues.TypedValue, outpu
 	DefaultHTTPMapper.FormatResponse(w, output, outputHeaders, outputErr)
 }
 
+// A temporary hack to extract the 'x-consent header from the request headers as
+// required by the data-flow consent validation service
+func ParseConsentId(req *http.Request) (string, error) {
+	consent := req.Header.Get("x-consent-id")
+	if len(consent) < 1 {
+		return consent, errors.New("x-consent header not found")
+	}
+	return consent, nil
+}
+
 type HTTPMapper struct {
 	DefaultHTTPMethod string
 	ValueTypeResolver func(tv *typedvalues.TypedValue) *mediatype.MediaType
@@ -153,6 +163,15 @@ func (h *HTTPMapper) ParseRequest(req *http.Request) (map[string]*typedvalues.Ty
 
 	// Default case parse body using the Parser interface
 	default:
+		// avoid using req.Body as it empties the stream making it
+		// unavailable for other functions. Instead use .GetBody method
+		// to get a copy of the request body
+		// req_body, err := req.GetBody()
+		if err != nil {
+			return nil, errors.New("failed to get request body")
+		}
+		// defer req_body.Close()
+
 		body, err = h.parseBody(req.Body, contentType)
 		if err != nil {
 			return nil, errors.Errorf("failed to parse request: %v", err)

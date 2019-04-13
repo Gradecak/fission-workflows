@@ -109,8 +109,19 @@ func (fp *Proxy) handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	deadline := fp.determineDeadline(r)
 
+	//Get consent identifier from request
+	logrus.Debugf("about to call ParseConsentId")
+	consentId, err := httpconv.ParseConsentId(r)
+	if err != nil {
+		logrus.Error("Consent Error: " + err.Error())
+	}
+	logrus.Debugf("Consent id is: " + consentId)
+
 	wfSpec := types.NewWorkflowInvocationSpec(fnID, deadline)
 	wfSpec.Inputs = inputs
+
+	//set consentId if X-Consent header is present in request
+	wfSpec.ConsentId = consentId
 
 	// Temporary: in case of query header 'X-Async' being present, make request async
 	if logrus.GetLevel() == logrus.DebugLevel {

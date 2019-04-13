@@ -71,7 +71,15 @@ func parseWorkflow(def *workflowSpec) (*types.WorkflowSpec, error) {
 		ApiVersion: def.APIVersion,
 		OutputTask: def.Output,
 		Tasks:      tasks,
+		Dataflow:   parseDataflow(&def.Dataflow),
 	}, nil
+
+}
+
+func parseDataflow(def *dataflowSpec) *types.DataFlowSpec {
+	return &types.DataFlowSpec{
+		ConsentCheck: def.ConsentCheck,
+	}
 }
 
 func parseTask(t *taskSpec) (*types.TaskSpec, error) {
@@ -233,6 +241,7 @@ type workflowSpec struct {
 	Description string
 	Output      string
 	Tasks       map[string]*taskSpec
+	Dataflow    dataflowSpec
 }
 
 type taskSpec struct {
@@ -240,4 +249,8 @@ type taskSpec struct {
 	Run      string
 	Inputs   interface{}
 	Requires []string
+}
+
+type dataflowSpec struct {
+	ConsentCheck bool `yaml:"consentCheck"`
 }
