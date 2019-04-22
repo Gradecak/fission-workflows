@@ -35,6 +35,7 @@ type InvocationController struct {
 	invocationAPI *api.Invocation
 	taskAPI       *api.Task
 	consentAPI    *api.Consent
+	provenanceAPI *api.Provenance
 	scheduler     *scheduler.InvocationScheduler
 	StateStore    *expr.Store // Future: just grab the initial state of the parent, instead of constantly rebuilding it.
 	span          opentracing.Span
@@ -46,7 +47,7 @@ type InvocationController struct {
 
 func NewInvocationController(invocationID string, executor *executor.LocalExecutor, invocationAPI *api.Invocation,
 	taskAPI *api.Task, scheduler *scheduler.InvocationScheduler, stateStore *expr.Store,
-	span opentracing.Span, logger *logrus.Entry, consentAPI *api.Consent) *InvocationController {
+	span opentracing.Span, logger *logrus.Entry, consentAPI *api.Consent, provAPI *api.Provenance) *InvocationController {
 
 	return &InvocationController{
 		invocationID:  invocationID,
@@ -54,6 +55,7 @@ func NewInvocationController(invocationID string, executor *executor.LocalExecut
 		invocationAPI: invocationAPI,
 		taskAPI:       taskAPI,
 		consentAPI:    consentAPI,
+		provenanceAPI: provAPI,
 		scheduler:     scheduler,
 		StateStore:    stateStore,
 		span:          span,
@@ -105,7 +107,7 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 	// features consentId field and that the value in the field has not been
 	// revoked when retrieved from consent store
 	if invocation.GetDataflowSpec().GetConsentCheck() {
-		var err Error = nil
+		var err error = nil
 
 		if len(invocation.GetSpec().GetConsentId()) < 1 {
 			err = errors.New("ConsentId missing from workflow invocation")
@@ -189,6 +191,7 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 			})
 			return ctrl.Err{Err: err}
 		} else {
+			c.provenanceAPI.GenerateProvenance(invocation.GetSpec().GetConsentId(), invocation.GetWorkflowSpec())
 			c.executor.Submit(&executor.Task{
 				TaskID:  invocation.ID() + ".success",
 				GroupID: invocation.ID(),
@@ -563,7 +566,7 @@ type InvocationMetaController struct {
 
 func NewInvocationMetaController(executor *executor.LocalExecutor, invocations *store.Invocations,
 	invocationAPI *api.Invocation, taskAPI *api.Task, scheduler *scheduler.InvocationScheduler, stateStore *expr.Store,
-	cachePollInterval time.Duration, consentAPI *api.Consent) *InvocationMetaController {
+	cachePollInterval time.Duration, consentAPI *api.Consent, provAPI *api.Provenance) *InvocationMetaController {
 	c := &InvocationMetaController{
 		executor:    executor,
 		runOnce:     &sync.Once{},
@@ -584,7 +587,7 @@ func NewInvocationMetaController(executor *executor.LocalExecutor, invocations *
 				return nil, fmt.Errorf("invocation ID missing in event: %v %v", event.Aggregate, event.Event.GetType())
 			}
 			return NewInvocationController(invocationID, executor, invocationAPI, taskAPI, scheduler,
-				stateStore, span, logrus.WithField("key", invocationID), consentAPI), nil
+				stateStore, span, logrus.WithField("key", invocationID), consentAPI, provAPI), nil
 		}),
 	}
 	c.sensors = []ctrl.Sensor{

@@ -118,8 +118,7 @@ func (es *EventStore) reconnect() error {
 	return nil
 }
 
-// Connect to a NATS cluster using the config.
-func Connect(cfg Config) (*EventStore, error) {
+func ConnectNats(cfg Config) (stan.Conn, error) {
 	if cfg.Client == "" {
 		cfg.Client = defaultClient
 	}
@@ -129,6 +128,7 @@ func Connect(cfg Config) (*EventStore, error) {
 	if cfg.Cluster == "" {
 		cfg.Cluster = defaultCluster
 	}
+	logrus.Debugf("Nats config %+v", cfg)
 	ns, err := nats.Connect(cfg.URL,
 		nats.MaxReconnects(-1), // Never stop trying to reconnect
 		nats.ReconnectWait(reconnectInterval),
@@ -147,6 +147,15 @@ func Connect(cfg Config) (*EventStore, error) {
 		return nil, err
 	}
 	conn, err := stan.Connect(cfg.Cluster, cfg.Client, stan.NatsConn(ns))
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
+}
+
+// Connect to a NATS cluster using the config.
+func Connect(cfg Config) (*EventStore, error) {
+	conn, err := ConnectNats(cfg)
 	if err != nil {
 		return nil, err
 	}

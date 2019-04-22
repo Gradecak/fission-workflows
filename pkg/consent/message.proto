@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package fission.workflows.consent;
+option go_package = "consent";
+
+import "github.com/fission/fission-workflows/pkg/types/types.proto";
+
+
+message ConsentMessage {
+  string id = 1;
+  types.ConsentStatus status = 2;
+}

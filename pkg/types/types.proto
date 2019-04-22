@@ -66,9 +66,9 @@ message DataFlowSpec {
 message WorkflowStatus {
     enum Status {
         QUEUED = 0;
-        READY = 2;
-        FAILED = 3;
-        DELETED = 4;
+        READY = 1;
+        FAILED = 2;
+        DELETED = 3;
     }
     Status status = 1;
     google.protobuf.Timestamp updatedAt = 2;
@@ -332,10 +332,22 @@ message ConsentStatus {
     Status status = 1;
 }
 
+// Graph structure for boradcasting provenance data, it is up to the client to
+// decode the message into a particular graph format
 
-// Consent message describes the status of consent for a particular individual
-// as identified by the id field
-message ConsentMessage {
-    string id = 1;
-    ConsentStatus status = 2;
+message Node {
+    enum Type {
+        TASK = 0;
+        DATAFLOW = 1;
+        ROOT = 2;
+        UNDEF = 3;
+    }
+    Type type = 1;
+    // tag is the value of the node, used to store information such as data
+    // sources
+    string tag = 2;
+    // edges only applicable when type = Dataflow (link dataflow to tasks)
+    repeated Node edges = 4;
+    // predecessor will only be applicable when Type = DATAFLOW
+    Node predecessor = 5;
 }

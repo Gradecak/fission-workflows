@@ -52,7 +52,8 @@ func main() {
 			Scheduler:            policy,
 			InternalRuntime:      c.Bool("internal"),
 			InvocationController: c.Bool("controller") || c.Bool("invocation-controller"),
-			WorkflowController:   c.Bool("controller") || c.Bool("workflow-controller"),
+			WorkflowController:   c.Bool("controller") || c.Bool("workflow-con0troller"),
+			Dataflows:            c.Bool("dataflows"),
 			AdminAPI:             c.Bool("api") || c.Bool("api-admin"),
 			WorkflowAPI:          c.Bool("api") || c.Bool("api-workflow"),
 			InvocationAPI:        c.Bool("api") || c.Bool("api-workflow-invocation"),
@@ -136,7 +137,11 @@ func createCli() *cli.App {
 			Name:  "nats",
 			Usage: "Use NATS as the event store",
 		},
-
+		// Dataflow specifics
+		cli.BoolFlag{
+			Name:  "dataflow",
+			Usage: "Enable data privacy specific aspects of Fission Workflows",
+		},
 		// Fission Environment Proxy
 		cli.BoolFlag{
 			Name:  "fission.proxy, fission-proxy",

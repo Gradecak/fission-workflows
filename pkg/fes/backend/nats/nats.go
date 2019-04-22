@@ -31,7 +31,8 @@ type subjectEvent struct {
 	Type    eventType `json:"type,omitempty"`
 }
 
-// Conn is a wrapper of 'stan.Conn' struct to augment the API with bounded subscriptions and channel-based subscriptions
+// Conn is a wrapper of 'stan.Conn' struct to augment the API with bounded
+// subscriptions and channel-based subscriptions
 type Conn struct {
 	stan.Conn
 }

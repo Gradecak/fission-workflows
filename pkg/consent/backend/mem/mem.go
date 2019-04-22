@@ -3,7 +3,6 @@
 package mem
 
 import (
-	"context"
 	//"error"
 	"github.com/fission/fission-workflows/pkg/consent"
 	"github.com/fission/fission-workflows/pkg/types"
@@ -18,7 +17,7 @@ func NewConsentStore() Store {
 	return Store{&map[consent.ID]types.ConsentStatus{}}
 }
 
-func (cb Store) Set(cid consent.ID, status types.ConsentStatus) error {
+func (cb Store) set(cid consent.ID, status types.ConsentStatus) error {
 	//todo check if previous entry exists
 	(*cb.Consent)[cid] = status
 	return nil
@@ -34,16 +33,6 @@ func (cb Store) Get(cid consent.ID) types.ConsentStatus {
 	return val
 }
 
-func (cb Store) Listen(ctx context.Context) {
-	i := "a"
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			cb.Set(i, types.ConsentStatus{types.ConsentStatus_REVOKED})
-
-		}
-
-	}
+func (cb Store) Listen() {
+	// TODO
 }

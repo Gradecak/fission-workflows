@@ -15,6 +15,7 @@ import (
 	"github.com/fission/fission-workflows/pkg/api/store"
 	"github.com/fission/fission-workflows/pkg/apiserver"
 	consentBE "github.com/fission/fission-workflows/pkg/consent/backend/mem"
+	conNats "github.com/fission/fission-workflows/pkg/consent/backend/nats"
 	"github.com/fission/fission-workflows/pkg/controller"
 	"github.com/fission/fission-workflows/pkg/controller/executor"
 	"github.com/fission/fission-workflows/pkg/controller/expr"
@@ -27,6 +28,7 @@ import (
 	"github.com/fission/fission-workflows/pkg/fnenv/native"
 	"github.com/fission/fission-workflows/pkg/fnenv/native/builtin"
 	"github.com/fission/fission-workflows/pkg/fnenv/workflows"
+	prov "github.com/fission/fission-workflows/pkg/provenance/backend/nats"
 	"github.com/fission/fission-workflows/pkg/scheduler"
 	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/fission/fission-workflows/pkg/util"
@@ -68,6 +70,11 @@ type App struct {
 	closers map[string]io.Closer
 }
 
+type DataflowApiExtensions struct {
+	provenance *api.Provenance
+	consent    *api.Consent
+}
+
 func (app *App) RegisterCloser(name string, closer io.Closer) {
 	if _, ok := app.closers[name]; ok {
 		panic(fmt.Sprintf("duplicate registry for key %s", name))
@@ -101,6 +108,7 @@ type Options struct {
 	InternalRuntime      bool
 	InvocationController bool
 	WorkflowController   bool
+	Dataflow             bool
 	AdminAPI             bool
 	WorkflowAPI          bool
 	HTTPGateway          bool
@@ -136,7 +144,6 @@ func Run(ctx context.Context, opts *Options) error {
 	if opts.Debug {
 		// Debug: do not sample down
 		cfg.Sampler = &jaegercfg.SamplerConfig{
-
 			Type:  jaeger.SamplerTypeConst,
 			Param: 1,
 		}
@@ -261,7 +268,15 @@ func Run(ctx context.Context, opts *Options) error {
 	}
 	if opts.InvocationController {
 		log.Info("Running invocation controller")
-		invocationCtrl := setupInvocationController(invocationStore, es, runtimes, resolvers, sched)
+		extensions := &DataflowApiExtensions{}
+		if opts.Dataflow {
+			log.Info("Dataflow extensions enabled")
+			extensions.provenance = setupProvenanceAPI(*opts.NATS)
+			extensions.consent = setupConsentNatsAPI(*opts.NATS)
+			// start the NATS subscription for consent events
+			extensions.consent.WatchConsent()
+		}
+		invocationCtrl := setupInvocationController(invocationStore, es, runtimes, resolvers, sched, extensions)
 		go invocationCtrl.Run()
 		defer func() {
 			if err := invocationCtrl.Close(); err != nil {
@@ -402,6 +417,27 @@ func setupNatsEventStoreClient(config nats.Config) *nats.EventStore {
 	return es
 }
 
+func setupProvenanceAPI(config nats.Config) *api.Provenance {
+	pub, err := prov.NewPublisher(config)
+	if err != nil {
+		panic(err)
+	}
+	return api.NewProvenance(pub)
+}
+
+func setupConsentNatsAPI(config nats.Config) *api.Consent {
+	if config.Client == "" {
+		config.Client = util.UID()
+	}
+	conStore, err := conNats.NewNatsConsentStore(config)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return api.NewConsentAPI(conStore)
+}
+
 func setupWorkflowInvocationCache(app *App, invocationEventPub pubsub.Publisher, backend fes.Backend) *cache.SubscribedCache {
 	sub := invocationEventPub.Subscribe(pubsub.SubscriptionOptions{
 		Buffer: invocationSubscriptionBuffer,
@@ -499,16 +535,20 @@ func serveHTTPGateway(ctx context.Context, mux *grpcruntime.ServeMux, adminAPIAd
 
 func setupInvocationController(invocations *store.Invocations, es fes.Backend,
 	fnRuntimes map[string]fnenv.Runtime, fnResolvers map[string]fnenv.RuntimeResolver,
-	s *scheduler.InvocationScheduler) *controller.InvocationMetaController {
+	s *scheduler.InvocationScheduler, ext *DataflowApiExtensions) *controller.InvocationMetaController {
 
 	workflowAPI := api.NewWorkflowAPI(es, fnenv.NewMetaResolver(fnResolvers))
 	invocationAPI := api.NewInvocationAPI(es)
 	dynamicAPI := api.NewDynamicApi(workflowAPI, invocationAPI)
-	consentAPI := api.NewConsentAPI(consentBE.NewConsentStore())
 	taskAPI := api.NewTaskAPI(fnRuntimes, es, dynamicAPI)
 	stateStore := expr.NewStore()
 	localExec := executor.NewLocalExecutor(executorMaxParallelism, executorMaxTaskQueueSize)
-	return controller.NewInvocationMetaController(localExec, invocations, invocationAPI, taskAPI, s, stateStore, invocationStorePollInterval, consentAPI)
+	return controller.NewInvocationMetaController(localExec, invocations, invocationAPI, taskAPI, s,
+		stateStore, invocationStorePollInterval, ext.consent, ext.provenance)
+}
+
+func setupConsentMemAPI() *api.Consent {
+	return api.NewConsentAPI(consentBE.NewConsentStore())
 }
 
 func setupWorkflowController(store *store.Workflows, es fes.Backend,

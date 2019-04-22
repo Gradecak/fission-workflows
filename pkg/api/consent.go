@@ -1,18 +1,16 @@
 package api
 
 import (
-	"context"
 	"github.com/fission/fission-workflows/pkg/consent"
 	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // Consent consinst of two components, a consentStore in which consent
 // information is persisted ready to be queried, and an event listener which
 // runs in a goroutine and recieves updates for consent information
 type Consent struct {
-	cs consent.ConsentStore
+	consent.ConsentStore
 }
 
 func NewConsentAPI(cs consent.ConsentStore) *Consent {
@@ -20,19 +18,20 @@ func NewConsentAPI(cs consent.ConsentStore) *Consent {
 }
 
 func (capi *Consent) Query(cid consent.ID) types.ConsentStatus {
-	return capi.cs.Get(cid)
+	return capi.Get(cid)
 }
 
 // Listener starts the Consent Listener and returns. Consent Listener will
 // terminate when the provided context invokes the Done() function
-func (capi *Consent) Listen(ctx context.Context) {
-	go capi.cs.Listen(ctx)
+func (capi *Consent) WatchConsent() {
+	logrus.Debug("EXECUTING")
+	capi.Listen()
 }
 
 // Given the workflow paramaters, resolve the inputs and return the consent
 // ConsentStatus of the workflow
-func (capi *Consent) QueryWorkflowConsent(spec *types.WorkflowInvocationSpec) (types.ConsentStatus, error) {
+func (capi *Consent) QueryWorkflowConsent(spec *types.WorkflowInvocationSpec) types.ConsentStatus {
 	consentId := spec.GetConsentId()
-	status := cs.Get(consentId)
-	return status, nil
+	status := capi.Get(consentId)
+	return status
 }

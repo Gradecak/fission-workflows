@@ -70,6 +70,10 @@ func (m *WorkflowInvocation) GetDataflowSpec() *DataFlowSpec {
 	return m.GetSpec().GetWorkflow().GetSpec().GetDataflow()
 }
 
+func (m *WorkflowInvocation) GetWorkflowSpec() *WorkflowSpec {
+	return m.GetSpec().GetWorkflow().GetSpec()
+}
+
 // TODO how do we know which tasks are not being run
 func (m *WorkflowInvocation) TaskInvocation(id string) (*TaskInvocation, bool) {
 	ti, ok := m.Status.Tasks[id]
@@ -395,4 +399,19 @@ func (cs *ConsentStatus) Permitted() bool {
 		return false
 	}
 	return true
+}
+
+func (spec *WorkflowSpec) ToProvenance() *Node {
+	node := &Node{Type: Node_DATAFLOW} // TODO
+	node.Tag = spec.GetName()
+	for _, task := range spec.GetTasks() {
+		node.Edges = append(node.Edges, task.ToProvenance())
+	}
+	return node
+}
+
+func (spec *TaskSpec) ToProvenance() *Node {
+	node := &Node{Type: Node_TASK}
+	node.Tag = spec.GetFunctionRef() // temporary replace with a proper tag later on
+	return node
 }
