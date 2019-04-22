@@ -53,7 +53,7 @@ func main() {
 			InternalRuntime:      c.Bool("internal"),
 			InvocationController: c.Bool("controller") || c.Bool("invocation-controller"),
 			WorkflowController:   c.Bool("controller") || c.Bool("workflow-con0troller"),
-			Dataflows:            c.Bool("dataflows"),
+			Dataflow:             c.Bool("dataflow"),
 			AdminAPI:             c.Bool("api") || c.Bool("api-admin"),
 			WorkflowAPI:          c.Bool("api") || c.Bool("api-workflow"),
 			InvocationAPI:        c.Bool("api") || c.Bool("api-workflow-invocation"),
