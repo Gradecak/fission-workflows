@@ -106,7 +106,7 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 	// If consent check is required, ensure that the invocation spec
 	// features consentId field and that the value in the field has not been
 	// revoked when retrieved from consent store
-	if invocation.GetDataflowSpec().GetConsentCheck() {
+	if c.consentAPI != nil && invocation.GetDataflowSpec().GetConsentCheck() {
 		var err error = nil
 
 		if len(invocation.GetSpec().GetConsentId()) < 1 {
@@ -191,7 +191,9 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 			})
 			return ctrl.Err{Err: err}
 		} else {
-			c.provenanceAPI.GenerateProvenance(invocation.GetSpec().GetConsentId(), invocation.GetWorkflowSpec())
+			if c.provenanceAPI != nil {
+				c.provenanceAPI.GenerateProvenance(invocation.GetSpec().GetConsentId(), invocation.GetWorkflowSpec())
+			}
 			c.executor.Submit(&executor.Task{
 				TaskID:  invocation.ID() + ".success",
 				GroupID: invocation.ID(),
