@@ -2,12 +2,12 @@ package fnenv
 
 import (
 	"fmt"
-	"sync"
-	"time"
-
 	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"strings"
+	"sync"
+	"time"
 )
 
 const (
@@ -101,10 +101,14 @@ func (ps *MetaResolver) resolveForRuntime(runtime string, ref types.FnRef) (type
 	}
 
 	fnResolved.WithLabelValues(runtime).Inc()
+
+	//set the zone by parsing the -XX suffix from the function ID
+	zone := ref.GenZone()
 	return types.FnRef{
 		Runtime:   runtime,
 		Namespace: ref.Namespace,
 		ID:        rsv,
+		Zone:      zone,
 	}, nil
 }
 
@@ -139,11 +143,11 @@ func ResolveTask(ps Resolver, tasks ...*types.TaskSpec) (map[string]*types.FnRef
 	wg := sync.WaitGroup{}
 	wg.Add(len(uniqueTasks))
 	resolved := map[string]*types.FnRef{}
-	resolvedC := make(chan sourceFnRef, len(uniqueTasks))
+	resolvedC := make(chan []sourceFnRef, len(uniqueTasks))
 
 	// ResolveTask each task in the workflow definition in parallel
 	for k, t := range uniqueTasks {
-		go func(k string, t *types.TaskSpec, tc chan sourceFnRef) {
+		go func(k string, t *types.TaskSpec, tc chan []sourceFnRef) {
 			err := resolveTask(ps, k, t, tc)
 			if err != nil {
 				lastErr = err
@@ -159,8 +163,10 @@ func ResolveTask(ps Resolver, tasks ...*types.TaskSpec) (map[string]*types.FnRef
 	}()
 
 	// Store results of the resolved tasks
-	for t := range resolvedC {
-		resolved[t.src] = t.FnRef
+	for r := range resolvedC {
+		for _, t := range r {
+			resolved[t.src] = t.FnRef
+		}
 	}
 
 	if lastErr != nil {
@@ -170,20 +176,46 @@ func ResolveTask(ps Resolver, tasks ...*types.TaskSpec) (map[string]*types.FnRef
 }
 
 // resolveTaskAndInputs traverses the inputs of a task to resolve nested functions and workflows.
-func resolveTask(ps Resolver, id string, task *types.TaskSpec, resolvedC chan sourceFnRef) error {
+func resolveTask(ps Resolver, id string, task *types.TaskSpec, resolvedC chan []sourceFnRef) error {
 	if task == nil || resolvedC == nil {
 		return nil
 	}
 
-	t, err := ps.Resolve(task.FunctionRef)
-	if err != nil {
-		return err
+	toResolve := []string{task.FunctionRef}
+	resolved := make([]sourceFnRef, 1)
+
+	if constr := task.GetExecConstraints(); constr != nil {
+
+		// TODO extend to resolve multiple zone hints
+		if zoneHint := constr.GetZoneHint(); zoneHint != types.Zone_UNDEF {
+			fId := fmt.Sprintf("%s-%s", task.FunctionRef, strings.ToLower(types.Zone_name[int32(zoneHint)]))
+			toResolve = append(toResolve, fId)
+		}
+
+		// if function is zone locked, postfix the zone identifier to the
+		// function identifier so that the function for the correct zone
+		// is executed
+		if zoneLock := constr.GetZoneLock(); zoneLock != types.Zone_UNDEF {
+			//task.FunctionRef += fmt.Sprintf("-%s", strings.ToLower(types.Zone_name[int32(zoneLock)]))
+			fId := fmt.Sprintf("%s-%s", task.FunctionRef, strings.ToLower(types.Zone_name[int32(zoneLock)]))
+			toResolve = append(toResolve, fId)
+		}
 	}
 
-	resolvedC <- sourceFnRef{
-		src:   id,
-		FnRef: &t,
+	// resolve all of the functions in all environments for the given task
+	for _, r := range toResolve {
+		t, err := ps.Resolve(r)
+		if err != nil {
+			return err
+		}
+		logrus.Infof("EXTENDED FNREF %+v", t)
+		resolved = append(resolved, sourceFnRef{
+			src:   r,
+			FnRef: &t,
+		})
 	}
+
+	resolvedC <- resolved
 
 	return nil
 }

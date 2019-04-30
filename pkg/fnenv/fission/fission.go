@@ -186,7 +186,7 @@ func (fe *FunctionEnv) Invoke(spec *types.TaskInvocationSpec, opts ...fnenv.Invo
 
 // Prepare signals the Fission runtime that a function request is expected at a specific time.
 // For now this function will tap immediately regardless of the expected execution time.
-func (fe *FunctionEnv) Prepare(fn types.FnRef, expectedAt time.Time) error {
+func (fe *FunctionEnv) Prepare(fn types.FnRef, expectedAt time.Time, region ...string) error {
 	reqURL, err := fe.getFnURL(fn)
 	if err != nil {
 		return err
@@ -194,6 +194,12 @@ func (fe *FunctionEnv) Prepare(fn types.FnRef, expectedAt time.Time) error {
 
 	// Tap the Fission function at the right time
 	log.WithField("fn", fn).Infof("Prewarming Fission function: %v", reqURL)
+
+	//if additional scheduling constraints specified
+	if len(region) > 0 {
+		return fe.tapServiceConstrained(reqURL.String(), region[0])
+	}
+
 	return fe.tapService(reqURL.String())
 }
 
@@ -255,6 +261,21 @@ func (fe *FunctionEnv) createRouterURL(fn types.FnRef) string {
 }
 
 func (fe *FunctionEnv) tapService(serviceUrlStr string) error {
+	executorUrl := fe.executorURL + "/v2/tapService"
+
+	resp, err := http.Post(executorUrl, "application/octet-stream", bytes.NewReader([]byte(serviceUrlStr)))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return fission.MakeErrorFromHTTP(resp)
+	}
+	return nil
+}
+
+// TODO add constraint as paramater to fission
+func (fe *FunctionEnv) tapServiceConstrained(serviceUrlStr string, constraint string) error {
 	executorUrl := fe.executorURL + "/v2/tapService"
 
 	resp, err := http.Post(executorUrl, "application/octet-stream", bytes.NewReader([]byte(serviceUrlStr)))

@@ -284,7 +284,7 @@ func (c *LoadingCache) getFromEventStore(aggregate fes.Aggregate) (fes.Entity, e
 }
 
 func (c *LoadingCache) Refresh(key fes.Aggregate) {
-	logrus.Debug("refreshing key: ", key)
+	//logrus.Debug("refreshing key: ", key)
 	entity, err := c.getFromEventStore(key)
 	if err != nil {
 		logrus.Debugf("failed to refresh key %v", key.Format())

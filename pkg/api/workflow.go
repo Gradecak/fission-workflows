@@ -102,10 +102,13 @@ func (wa *Workflow) Parse(workflow *types.Workflow) (map[string]*types.TaskStatu
 
 	taskStatuses := map[string]*types.TaskStatus{}
 	for id, t := range workflow.Spec.Tasks {
+		fnRef := resolvedFns[t.FunctionRef]
+		delete(resolvedFns, t.FunctionRef) // only keep alternative Fns
 		taskStatuses[id] = &types.TaskStatus{
 			UpdatedAt: ptypes.TimestampNow(),
-			FnRef:     resolvedFns[t.FunctionRef],
+			FnRef:     fnRef,
 			Status:    types.TaskStatus_READY,
+			AltFnRefs: resolvedFns,
 		}
 	}
 

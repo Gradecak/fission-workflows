@@ -30,6 +30,12 @@ message RunTaskAction {
     string taskID = 1;
     //    map<string, fission.workflows.types.TypedValue> inputs = 2;
     // TODO Future: add here contstraints, preferences, fission scheduler instructions, communication, routing ect.
+
+    // // Alternative environments to execute the Task in
+    // repeated FnRef altFnRefs = 2;
+
+    // preferred environment for execution
+    types.FnRef pref = 3;
 }
 
 message PrepareTaskAction {

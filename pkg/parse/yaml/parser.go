@@ -2,6 +2,7 @@ package yaml
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -79,6 +80,7 @@ func parseWorkflow(def *workflowSpec) (*types.WorkflowSpec, error) {
 func parseDataflow(def *dataflowSpec) *types.DataFlowSpec {
 	return &types.DataFlowSpec{
 		ConsentCheck: def.ConsentCheck,
+		Provenance:   def.Provenance,
 	}
 }
 
@@ -98,14 +100,56 @@ func parseTask(t *taskSpec) (*types.TaskSpec, error) {
 		fn = defaultFunctionRef
 	}
 
+	execConstr, err := parseExecConstraints(t.ExecConstraints)
+	if err != nil {
+		logrus.Errorf("Got error %v", err)
+	}
+
 	result := &types.TaskSpec{
-		FunctionRef: fn,
-		Requires:    deps,
-		Await:       int32(len(deps)),
-		Inputs:      inputs,
+		FunctionRef:     fn,
+		Requires:        deps,
+		Await:           int32(len(deps)),
+		Inputs:          inputs,
+		ExecConstraints: execConstr,
 	}
 
 	return result, nil
+}
+
+func parseExecConstraints(constr map[string]string) (*types.TaskDataflowSpec, error) {
+	// not necesarily an error but exec constraints field in TaskSpec should
+	// be set to nil if no constraints are provided
+	if len(constr) < 1 {
+		return nil, nil
+	}
+
+	dfs := &types.TaskDataflowSpec{}
+	for k, v := range constr {
+
+		zone, err := parseZoneValue(v)
+		if err != nil {
+			return nil, errors.New("zoneLock: invalid zone identifier")
+		}
+
+		switch k {
+		case "zoneLock":
+			dfs.ZoneLock = zone
+		case "zoneHint":
+			dfs.ZoneHint = zone
+		default:
+			return nil, fmt.Errorf("unknown identifier %v", k)
+		}
+	}
+
+	return dfs, nil
+}
+
+func parseZoneValue(strZone string) (types.Zone, error) {
+	zone, ok := types.Zone_value[strZone]
+	if !ok {
+		return types.Zone(zone), errors.New("Undefined zone identifier")
+	}
+	return types.Zone(zone), nil
 }
 
 // parseInputs parses the inputs of a task. This is typically a map[interface{}]interface{}.
@@ -245,12 +289,14 @@ type workflowSpec struct {
 }
 
 type taskSpec struct {
-	ID       string
-	Run      string
-	Inputs   interface{}
-	Requires []string
+	ID              string
+	Run             string
+	Inputs          interface{}
+	Requires        []string
+	ExecConstraints map[string]string `yaml:"execConstraints"`
 }
 
 type dataflowSpec struct {
 	ConsentCheck bool `yaml:"consentCheck"`
+	Provenance   bool
 }

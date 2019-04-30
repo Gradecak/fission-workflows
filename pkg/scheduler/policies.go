@@ -7,6 +7,8 @@ import (
 	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/fission/fission-workflows/pkg/types/graph"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/sirupsen/logrus"
+	"math/rand"
 )
 
 var DefaultPolicy = NewHorizonPolicy()
@@ -152,6 +154,53 @@ func (p *PrewarmHorizonPolicy) Evaluate(invocation *types.WorkflowInvocation) (*
 	return schedule, nil
 }
 
+// Horizon Multizone Policy is similar to Horizon Policy, however, it take into
+// account the Zone hints specified in the Workflow Specificiation
+type HorizonMultiZonePolicy struct {
+	// TODO add some tracking as to which tasks where scheduled to which
+	// environments in order to be able to make informed decisions based on
+	// load
+}
+
+func NewHorizonMZPolicy() *HorizonMultiZonePolicy {
+	return &HorizonMultiZonePolicy{}
+}
+
+func (p *HorizonMultiZonePolicy) Evaluate(invocation *types.WorkflowInvocation) (*Schedule, error) {
+	schedule := &Schedule{InvocationId: invocation.ID(), CreatedAt: ptypes.TimestampNow()}
+
+	// If there are failed tasks halt the workflow
+	if failedTasks := getFailedTasks(invocation); len(failedTasks) > 0 {
+		for _, failedTask := range failedTasks {
+			msg := fmt.Sprintf("Task '%v' failed", failedTask.ID())
+			if err := failedTask.GetStatus().GetError(); err != nil {
+				msg = err.Message
+			}
+			schedule.Abort = newAbortAction(msg)
+		}
+		return schedule, nil
+	}
+
+	// Find and schedule all tasks on the scheduling horizon
+	openTasks := getOpenTasks(invocation)
+	depGraph := graph.Parse(graph.NewTaskInstanceIterator(openTasks))
+	horizon := graph.Roots(depGraph)
+
+	for _, node := range horizon {
+		task := node.(*graph.TaskInvocationNode).Task()
+
+		refs := getTaskFnRefs(task)
+		logrus.Debugf("FUNCTION REFS %+v", refs)
+
+		taskAction := newRunTaskAction(task.ID())
+
+		// set the preferred function execution environment
+		taskAction.Pref = randomPreferredFnRef(task) //refs[rand.Intn(len(refs))]
+		schedule.AddRunTask(taskAction)
+	}
+	return schedule, nil
+}
+
 func getFailedTasks(invocation *types.WorkflowInvocation) []*types.TaskInvocation {
 	var failedTasks []*types.TaskInvocation
 	for _, task := range invocation.TaskInvocations() {
@@ -180,4 +229,43 @@ func getOpenTasks(invocation *types.WorkflowInvocation) map[string]*types.TaskIn
 		}
 	}
 	return openTasks
+}
+
+func getTaskId(invocation *types.TaskInvocation) string {
+	return invocation.GetSpec().GetTaskId()
+}
+
+func getTaskFnRefs(invocation *types.Task) []*types.FnRef {
+	altFnRefs := invocation.GetStatus().GetAltFnRefs()
+	if altFnRefs == nil {
+		logrus.Error("FNREFS ARE NIL")
+	}
+	refs := []*types.FnRef{}
+	for _, v := range altFnRefs {
+		refs = append(refs, v)
+	}
+	return refs
+}
+
+// return the preffered function execution
+func randomPreferredFnRef(task *types.Task) *types.FnRef {
+	rand.Seed(time.Now().Unix())
+
+	refs := getTaskFnRefs(task)
+	// if task is zone locked we have no choice but to set the lock as the zoneRef
+	if zl := task.GetSpec().GetExecConstraints().GetZoneLock(); zl != types.Zone_UNDEF {
+		for _, ref := range refs {
+			if ref != nil && ref.Zone == zl {
+				return ref
+			}
+		}
+	}
+
+	r := refs[rand.Intn(len(refs))]
+	if r == nil {
+		logrus.Debugf("REF IS NIL!!!!")
+		return refs[len(refs)-1]
+	}
+	// else pick an environment at random
+	return r
 }

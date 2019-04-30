@@ -60,7 +60,8 @@ message DataFlowSpec {
     // Indicates if consent should be verified before tasks are invoked at each
     // stage of the workflow
     bool consentCheck = 1;
-    // TODO: add country data locking field
+    bool provenance = 2;
+
 }
 
 message WorkflowStatus {
@@ -190,6 +191,13 @@ message TaskSpec {
     // used in the task invocation spec to compute the deadline.
     google.protobuf.Duration timeout = 7;
 
+    TaskDataflowSpec execConstraints = 8;
+
+}
+
+message TaskDataflowSpec {
+    Zone zoneLock = 1;
+    Zone zoneHint = 2;
 }
 
 message TaskStatus {
@@ -200,8 +208,15 @@ message TaskStatus {
     }
     Status status = 1;
     google.protobuf.Timestamp updatedAt = 2;
+     // The main fnRef for executing the task. Keeping this field in order to
+     // preserve backward compatibility when dataflow extension is disabled
     FnRef fnRef = 3;
     Error error = 4; // Only set when status == failed
+
+    // Alternative FnRefs that the task can be executed from if the main FnRef
+    // is deemed to busy or zoneHints suggest the better alternative for execution
+    // map<function-zone, FnRef>
+    map<string, FnRef> altFnRefs = 5;
 }
 
 message TaskDependencyParameters {
@@ -310,6 +325,9 @@ message FnRef {
 
     // ID is the runtime-specific identifier of the function.
     string ID = 4;
+
+    // the zone in which the the function execution is taking place
+    Zone zone = 5;
 }
 
 // Utility wrapper for a TypedValue map
@@ -350,4 +368,12 @@ message Node {
     repeated Node edges = 4;
     // predecessor will only be applicable when Type = DATAFLOW
     Node predecessor = 5;
+}
+
+enum Zone {
+    UNDEF = 0;
+    NL    = 1;
+    DE    = 2;
+    IR    = 3;
+    AU    = 4;
 }

@@ -247,7 +247,7 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 			TaskID:  fmt.Sprintf("%s.run.%s", invocation.ID(), taskID),
 			GroupID: invocation.ID(),
 			Apply: func() error {
-				return c.execTask(invocation, taskID)
+				return c.execTask(invocation, action)
 			},
 		}) {
 			c.startedTasks[action.TaskID] = struct{}{}
@@ -260,7 +260,8 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 	}
 }
 
-func (c *InvocationController) execTask(invocation *types.WorkflowInvocation, taskID string) error {
+func (c *InvocationController) execTask(invocation *types.WorkflowInvocation, runAction *scheduler.RunTaskAction) error {
+	taskID := runAction.GetTaskID()
 	log := c.logger
 	span := opentracing.StartSpan(fmt.Sprintf("/task/%s", taskID), opentracing.ChildOf(c.span.Context()))
 	span.SetTag("task", taskID)
@@ -317,6 +318,12 @@ func (c *InvocationController) execTask(invocation *types.WorkflowInvocation, ta
 	// Create the task run
 	taskRunSpec := types.NewTaskInvocationSpec(invocation, task, time.Now())
 	taskRunSpec.Inputs = inputs
+
+	if fnRef := runAction.GetPref(); fnRef != nil {
+		//change the fnRef to the fnRef preferred by the scheduler
+		taskRunSpec.FnRef = runAction.Pref
+	}
+
 	if log.Level == logrus.DebugLevel {
 		i, err := typedvalues.UnwrapMapTypedValue(taskRunSpec.GetInputs())
 		if err != nil {

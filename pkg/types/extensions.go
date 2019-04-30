@@ -1,8 +1,12 @@
 package types
 
 import (
+	"fmt"
 	"github.com/fission/fission-workflows/pkg/types/typedvalues"
 	"github.com/golang/protobuf/proto"
+	"github.com/sirupsen/logrus"
+	"regexp"
+	"strings"
 )
 
 // Types other than specified in protobuf
@@ -414,4 +418,54 @@ func (spec *TaskSpec) ToProvenance() *Node {
 	node := &Node{Type: Node_TASK}
 	node.Tag = spec.GetFunctionRef() // temporary replace with a proper tag later on
 	return node
+}
+
+//
+// Zone
+//
+var zoneRegexp *regexp.Regexp = nil
+
+func GetZoneRegexp() *regexp.Regexp {
+	// a quick hack to avoid constantly rebuilding the regexp string
+	if zoneRegexp != nil {
+		return zoneRegexp
+	}
+
+	regexpStr := "("
+	for i, zn := range Zone_name {
+		zone := ""
+		// skip compiling UNDEF zone into the regex
+		if i == 0 {
+			continue
+		}
+		// dont add '|'' regex alterative for first value
+		if i != 1 {
+			zone = zone + "|"
+		}
+		// fission doesnt allow uppercase characters in environemnt
+		// names as such we convert to lowercase
+		zone += fmt.Sprintf("-%s", strings.ToLower(zn))
+		regexpStr += zone
+	}
+	regexpStr += ")"
+	logrus.Debugf("REGEXP STRING %s", regexpStr)
+	//compile the regexp string
+	zoneRegexp = regexp.MustCompile(regexpStr)
+	return zoneRegexp
+}
+
+//
+// FnRef
+//
+func (ref *FnRef) GenZone() Zone {
+	re := GetZoneRegexp()
+
+	zone := re.Find([]byte(ref.GetID()))
+	if zone == nil {
+		return Zone(0) //UNDEF
+	}
+	logrus.Debugf("ZONE FOUND %s", zone)
+	// convert to string and remove the '-' from begining of string
+	zn := strings.ToUpper(string(zone)[1:])
+	return Zone(Zone_value[zn])
 }

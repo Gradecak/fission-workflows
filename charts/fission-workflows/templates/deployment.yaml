@@ -30,6 +30,7 @@ spec:
           "--nats",
           {{- end }}
           "--fission",
+          "--dataflow",
           "--internal",
           "--controller",
           "--api-http",
@@ -42,12 +43,10 @@ spec:
           {{- end }}
         ]
         env: # TODO add dedicated NATS cluster (instead of reusing the mqtrigger)
-        {{- if eq .Values.eventstore.type "nats" }}
         - name: ES_NATS_URL
           value: "nats://{{ .Values.eventstore.nats.authToken }}@{{ .Values.eventstore.nats.location }}.{{ .Values.fission.ns }}:{{ .Values.eventstore.nats.port }}"
         - name: ES_NATS_CLUSTER
           value: "{{ .Values.eventstore.nats.cluster }}"
-        {{- end}}
         - name: FNENV_FISSION_CONTROLLER
           value: "{{ .Values.fission.controller }}.{{ .Values.fission.ns }}"
         - name: FNENV_FISSION_EXECUTOR

@@ -87,7 +87,9 @@ func parseFissionOptions(c *cli.Context) *bundle.FissionOptions {
 }
 
 func parseNatsOptions(c *cli.Context) *nats.Config {
-	if !c.Bool("nats") {
+	// since dataflows utilises nats config, ensure opts are only nil if both
+	// are disabled
+	if !c.Bool("nats") && !c.Bool("dataflow") {
 		return nil
 	}
 
@@ -228,7 +230,7 @@ func createCli() *cli.App {
 		cli.StringFlag{
 			Name:  bundle.FlagSchedulerPolicy,
 			Usage: "Policy to use for the scheduler (prewarm-all, prewarm-horizon, horizon)",
-			Value: "horizon",
+			Value: "horizon-mz",
 		},
 		cli.DurationFlag{
 			Name:  bundle.FlagSchedulerColdStartDuration,
