@@ -7,8 +7,10 @@ output: Privacy
 tasks:
   Privacy:
     run: hello
-    execConstraints:
-      zoneLock: DE
+    execOpts:
+      #zoneLock: DE
       zoneHint: NL
+      multizone: true
+
 dataflow:
   consentCheck: true

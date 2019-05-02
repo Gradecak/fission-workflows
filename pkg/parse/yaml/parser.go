@@ -100,7 +100,7 @@ func parseTask(t *taskSpec) (*types.TaskSpec, error) {
 		fn = defaultFunctionRef
 	}
 
-	execConstr, err := parseExecConstraints(t.ExecConstraints)
+	execConstr, err := parseTaskExecOpts(&t.ExecOpts)
 	if err != nil {
 		logrus.Errorf("Got error %v", err)
 	}
@@ -116,29 +116,23 @@ func parseTask(t *taskSpec) (*types.TaskSpec, error) {
 	return result, nil
 }
 
-func parseExecConstraints(constr map[string]string) (*types.TaskDataflowSpec, error) {
-	// not necesarily an error but exec constraints field in TaskSpec should
-	// be set to nil if no constraints are provided
-	if len(constr) < 1 {
-		return nil, nil
-	}
+func parseTaskExecOpts(opts *execOpts) (*types.TaskDataflowSpec, error) {
+	dfs := &types.TaskDataflowSpec{MultiZone: opts.Multizone}
 
-	dfs := &types.TaskDataflowSpec{}
-	for k, v := range constr {
-
-		zone, err := parseZoneValue(v)
+	if opts.ZoneLock != "" {
+		zone, err := parseZoneValue(opts.ZoneLock)
 		if err != nil {
 			return nil, errors.New("zoneLock: invalid zone identifier")
 		}
+		dfs.ZoneLock = zone
+	}
 
-		switch k {
-		case "zoneLock":
-			dfs.ZoneLock = zone
-		case "zoneHint":
-			dfs.ZoneHint = zone
-		default:
-			return nil, fmt.Errorf("unknown identifier %v", k)
+	if opts.ZoneHint != "" {
+		zone, err := parseZoneValue(opts.ZoneHint)
+		if err != nil {
+			return nil, errors.New("zoneLock: invalid zone identifier")
 		}
+		dfs.ZoneHint = zone
 	}
 
 	return dfs, nil
@@ -288,12 +282,18 @@ type workflowSpec struct {
 	Dataflow    dataflowSpec
 }
 
+type execOpts struct {
+	ZoneLock  string `yaml:"zoneLock"`
+	ZoneHint  string `yaml:"zoneHint"`
+	Multizone bool
+}
+
 type taskSpec struct {
-	ID              string
-	Run             string
-	Inputs          interface{}
-	Requires        []string
-	ExecConstraints map[string]string `yaml:"execConstraints"`
+	ID       string
+	Run      string
+	Inputs   interface{}
+	Requires []string
+	ExecOpts execOpts `yaml:"execOpts"`
 }
 
 type dataflowSpec struct {

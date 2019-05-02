@@ -61,6 +61,7 @@ func main() {
 			Metrics:              c.Bool("metrics"),
 			Debug:                c.Bool("debug"),
 			FissionProxy:         proxyConfig,
+			UseNats:              c.Bool("nats"),
 		})
 	}
 	cliApp.Run(os.Args)

@@ -198,6 +198,7 @@ message TaskSpec {
 message TaskDataflowSpec {
     Zone zoneLock = 1;
     Zone zoneHint = 2;
+    bool multiZone = 3;
 }
 
 message TaskStatus {

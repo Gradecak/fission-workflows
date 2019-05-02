@@ -432,16 +432,21 @@ func GetZoneRegexp() *regexp.Regexp {
 	}
 
 	regexpStr := "("
-	for i, zn := range Zone_name {
+	i := 0
+	for v, zn := range Zone_name {
 		zone := ""
 		// skip compiling UNDEF zone into the regex
-		if i == 0 {
+		if v == 0 {
 			continue
 		}
+
 		// dont add '|'' regex alterative for first value
-		if i != 1 {
+		if i != 0 {
 			zone = zone + "|"
+		} else {
+			i = 1
 		}
+
 		// fission doesnt allow uppercase characters in environemnt
 		// names as such we convert to lowercase
 		zone += fmt.Sprintf("-%s", strings.ToLower(zn))
@@ -452,6 +457,20 @@ func GetZoneRegexp() *regexp.Regexp {
 	//compile the regexp string
 	zoneRegexp = regexp.MustCompile(regexpStr)
 	return zoneRegexp
+}
+
+// Given a function-id return a list of zone suffixed function id's
+func GenZoneVariants(fnId string) []string {
+	//fns := make([]string, len(Zone_name)-2)
+	fns := []string{}
+	//fns = append(fns, fnId)
+	for i, v := range Zone_name {
+		if i != 0 {
+			fns = append(fns, fmt.Sprintf("%s-%s", fnId, strings.ToLower(v)))
+		}
+	}
+	logrus.Debug("ZONE VARIANTS: %v", fns)
+	return fns
 }
 
 //

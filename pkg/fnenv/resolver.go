@@ -5,7 +5,8 @@ import (
 	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"strings"
+	//	"strings"
+	//	"errors"
 	"sync"
 	"time"
 )
@@ -139,6 +140,8 @@ func ResolveTask(ps Resolver, tasks ...*types.TaskSpec) (map[string]*types.FnRef
 		}
 	}
 
+	logrus.Debugf("UNIQUE TASKS %+v", uniqueTasks)
+
 	var lastErr error
 	wg := sync.WaitGroup{}
 	wg.Add(len(uniqueTasks))
@@ -182,41 +185,42 @@ func resolveTask(ps Resolver, id string, task *types.TaskSpec, resolvedC chan []
 	}
 
 	toResolve := []string{task.FunctionRef}
-	resolved := make([]sourceFnRef, 1)
+	resolved := []sourceFnRef{}
 
 	if constr := task.GetExecConstraints(); constr != nil {
-
-		// TODO extend to resolve multiple zone hints
-		if zoneHint := constr.GetZoneHint(); zoneHint != types.Zone_UNDEF {
-			fId := fmt.Sprintf("%s-%s", task.FunctionRef, strings.ToLower(types.Zone_name[int32(zoneHint)]))
-			toResolve = append(toResolve, fId)
-		}
-
-		// if function is zone locked, postfix the zone identifier to the
-		// function identifier so that the function for the correct zone
-		// is executed
-		if zoneLock := constr.GetZoneLock(); zoneLock != types.Zone_UNDEF {
-			//task.FunctionRef += fmt.Sprintf("-%s", strings.ToLower(types.Zone_name[int32(zoneLock)]))
-			fId := fmt.Sprintf("%s-%s", task.FunctionRef, strings.ToLower(types.Zone_name[int32(zoneLock)]))
-			toResolve = append(toResolve, fId)
+		if constr.GetMultiZone() {
+			zoneVariants := types.GenZoneVariants(task.FunctionRef)
+			toResolve = append(toResolve, zoneVariants...)
 		}
 	}
 
-	// resolve all of the functions in all environments for the given task
-	for _, r := range toResolve {
+	// resolve all of the functions across all zones for the given task
+	for i, r := range toResolve {
 		t, err := ps.Resolve(r)
 		if err != nil {
-			return err
+			logrus.Errorf("Error resolving fn %v, reason: %+v --- Skipping", r, err)
+
+			// if the current function ref couldnt be resolved, move
+			// the TaskSpec.FnRef on to the next function in the
+			// list. useful when its a multizone task and the base
+			// task function does not exist eg hello-world -->
+			// doesn't exist .. hello-world-nl --> exists
+			if r == task.FunctionRef && i < len(toResolve)-1 {
+				task.FunctionRef = toResolve[i+1]
+			}
+			continue
 		}
-		logrus.Infof("EXTENDED FNREF %+v", t)
 		resolved = append(resolved, sourceFnRef{
 			src:   r,
 			FnRef: &t,
 		})
 	}
 
-	resolvedC <- resolved
+	if len(resolved) < 1 {
+		return fmt.Errorf("Could not resolve fnRef: %v", task.FunctionRef)
+	}
 
+	resolvedC <- resolved
 	return nil
 }
 

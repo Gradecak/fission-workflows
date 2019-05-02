@@ -115,6 +115,7 @@ type Options struct {
 	InvocationAPI        bool
 	Metrics              bool
 	Debug                bool
+	UseNats              bool
 }
 
 type FissionOptions struct {
@@ -192,7 +193,8 @@ func Run(ctx context.Context, opts *Options) error {
 	// Event Store
 	//
 	var eventStore fes.Backend
-	if opts.NATS != nil {
+	//	if opts.NATS != nil {
+	if opts.UseNats == true && opts.NATS != nil {
 		log.WithFields(log.Fields{
 			"url":           "<redacted>", // Typically includes the password
 			"cluster":       opts.NATS.Cluster,
