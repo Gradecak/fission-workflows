@@ -1,0 +1,32 @@
+# Fortunewhale shows of a basic workflow that combines both
+# Fission Functions (fortune, whalesay) and Internalfunctions (noop)
+#
+# Usage example: fission fn test --name fortunewhale
+apiVersion: 1
+output: TaskC
+tasks:
+  TaskA:
+    run: hello
+    execOpts:
+      multizone: true
+  TaskB:
+    run: hello
+    inputs:
+      default:
+        previous: "{$.Tasks.TaskA.Output}"
+    requires:
+      - TaskA
+    execOpts:
+      multizone: true
+  TaskC:
+    run: hello
+    inputs:
+      default:
+        previous: "{$.Tasks.TaskB.Output}"
+    requires:
+      - TaskB
+    execOpts:
+      multizone: true
+
+dataflow:
+  consentCheck: true

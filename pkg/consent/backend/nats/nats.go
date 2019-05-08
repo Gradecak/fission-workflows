@@ -61,10 +61,9 @@ func (cb Store) Get(cid consent.ID) types.ConsentStatus {
 }
 
 func (cb *Store) Listen() {
-	logrus.Debug("EXECUTING LISTEN")
 	sub, err := cb.nats.Subscribe(defaultSubPrefix,
 		func(m *stan.Msg) {
-			logrus.Debug("EVENT RECIEVED")
+			logrus.Info("Consent Event Recieved..")
 			msg, err := toConsentMsg(m.Data)
 			if err != nil {
 				logrus.Error("Failed to unmarshal Consent Message")

@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/fission/fission-workflows/pkg/consent"
 	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/sirupsen/logrus"
+	//"github.com/sirupsen/logrus"
 )
 
 // Consent consinst of two components, a consentStore in which consent
@@ -24,7 +24,6 @@ func (capi *Consent) Query(cid consent.ID) types.ConsentStatus {
 // Listener starts the Consent Listener and returns. Consent Listener will
 // terminate when the provided context invokes the Done() function
 func (capi *Consent) WatchConsent() {
-	logrus.Debug("EXECUTING")
 	capi.Listen()
 }
 

@@ -157,13 +157,15 @@ func (p *PrewarmHorizonPolicy) Evaluate(invocation *types.WorkflowInvocation) (*
 // Horizon Multizone Policy is similar to Horizon Policy, however, it take into
 // account the Zone hints specified in the Workflow Specificiation
 type HorizonMultiZonePolicy struct {
+	Random *rand.Rand
 	// TODO add some tracking as to which tasks where scheduled to which
 	// environments in order to be able to make informed decisions based on
 	// load
 }
 
 func NewHorizonMZPolicy() *HorizonMultiZonePolicy {
-	return &HorizonMultiZonePolicy{}
+	seed := rand.NewSource(time.Now().Unix())
+	return &HorizonMultiZonePolicy{rand.New(seed)}
 }
 
 func (p *HorizonMultiZonePolicy) Evaluate(invocation *types.WorkflowInvocation) (*Schedule, error) {
@@ -195,7 +197,7 @@ func (p *HorizonMultiZonePolicy) Evaluate(invocation *types.WorkflowInvocation) 
 		taskAction := newRunTaskAction(task.ID())
 
 		// set the preferred function execution environment
-		taskAction.Pref = randomPreferredFnRef(task) //refs[rand.Intn(len(refs))]
+		taskAction.Pref = randomPreferredFnRef(task, p.Random) //refs[rand.Intn(len(refs))]
 		schedule.AddRunTask(taskAction)
 	}
 	return schedule, nil
@@ -247,9 +249,9 @@ func getTaskFnRefs(invocation *types.Task) []*types.FnRef {
 	return refs
 }
 
-// return the preffered function execution
-func randomPreferredFnRef(task *types.Task) *types.FnRef {
-	rand.Seed(time.Now().Unix())
+// if the Task is not zone locked, pick a random zone in which to execute the
+// Task in. Otherwise use the zoneLock zone as the target of the Task
+func randomPreferredFnRef(task *types.Task, r *rand.Rand) *types.FnRef {
 
 	refs := getTaskFnRefs(task)
 	// if task is zone locked we have no choice but to set the lock as the zoneRef
@@ -260,12 +262,7 @@ func randomPreferredFnRef(task *types.Task) *types.FnRef {
 			}
 		}
 	}
-
-	r := refs[rand.Intn(len(refs))]
-	if r == nil {
-		logrus.Debugf("REF IS NIL!!!!")
-		return refs[len(refs)-1]
-	}
-	// else pick an environment at random
-	return r
+	// else take random zone
+	ret := refs[r.Intn(len(refs))]
+	return ret
 }

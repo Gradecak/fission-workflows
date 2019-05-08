@@ -172,6 +172,16 @@ func ResolveTask(ps Resolver, tasks ...*types.TaskSpec) (map[string]*types.FnRef
 		}
 	}
 
+	// A little bit of a hack... in the case of multizone tasks, in case the
+	// base function ref (eg, hello) doesnt resolve, but a zone variant does
+	// (eg hello-nl) we must change the FunctionRef of the taskSpec to the zone
+	// variant in order to be able to execute the Task
+	for _, t := range tasks {
+		if uTask, ok := uniqueTasks[t.FunctionRef]; ok {
+			t.FunctionRef = uTask.FunctionRef
+		}
+	}
+
 	if lastErr != nil {
 		return nil, lastErr
 	}

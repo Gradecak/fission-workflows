@@ -377,4 +377,5 @@ enum Zone {
     DE    = 2;
     IR    = 3;
     AU    = 4;
+    FR    = 5;
 }

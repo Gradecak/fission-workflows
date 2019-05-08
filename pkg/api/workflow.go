@@ -102,7 +102,10 @@ func (wa *Workflow) Parse(workflow *types.Workflow) (map[string]*types.TaskStatu
 
 	taskStatuses := map[string]*types.TaskStatus{}
 	for id, t := range workflow.Spec.Tasks {
-		fnRef := resolvedFns[t.FunctionRef]
+		fnRef, ok := resolvedFns[t.FunctionRef]
+		if !ok {
+			logrus.Errorf("COULD NOT FIND RESOLVED FOR %v", t.FunctionRef)
+		}
 		// delete(resolvedFns, t.FunctionRef) // only keep alternative Fns
 		taskStatuses[id] = &types.TaskStatus{
 			UpdatedAt: ptypes.TimestampNow(),
