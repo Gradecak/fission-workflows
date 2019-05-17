@@ -14,7 +14,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const defaultFunctionRef = builtin.Noop
+const (
+	defaultFunctionRef = builtin.Noop
+	metaTask           = 1
+	metaWorkflow       = 2
+)
+
+type MetaType = int
 
 var DefaultParser = &Parser{}
 
@@ -69,10 +75,11 @@ func parseWorkflow(def *workflowSpec) (*types.WorkflowSpec, error) {
 	}
 
 	return &types.WorkflowSpec{
-		ApiVersion: def.APIVersion,
-		OutputTask: def.Output,
-		Tasks:      tasks,
-		Dataflow:   parseDataflow(&def.Dataflow),
+		ApiVersion:     def.APIVersion,
+		OutputTask:     def.Output,
+		Tasks:          tasks,
+		Dataflow:       parseDataflow(&def.Dataflow),
+		ProvenanceMeta: parseProvenanceMeta(&def.ProvenanceMeta, metaWorkflow),
 	}, nil
 
 }
@@ -105,15 +112,35 @@ func parseTask(t *taskSpec) (*types.TaskSpec, error) {
 		logrus.Errorf("Got error %v", err)
 	}
 
+	meta := parseProvenanceMeta(&t.ProvenanceMeta, metaTask)
+
 	result := &types.TaskSpec{
 		FunctionRef:     fn,
 		Requires:        deps,
 		Await:           int32(len(deps)),
 		Inputs:          inputs,
 		ExecConstraints: execConstr,
+		ProvenanceMeta:  meta,
 	}
 
 	return result, nil
+}
+
+func parseProvenanceMeta(meta *provenanceMeta, typ MetaType) *types.ProvenanceMetadata {
+	m := &types.ProvenanceMetadata{}
+	if typ == metaTask {
+		if meta.InputSource != "" {
+			m.InputSource = meta.InputSource
+		}
+		if meta.OutputDest != "" {
+			m.OutputDest = meta.OutputDest
+		}
+	} else {
+		if meta.Predecessor != "" {
+			m.Predecessor = meta.Predecessor
+		}
+	}
+	return m
 }
 
 func parseTaskExecOpts(opts *execOpts) (*types.TaskDataflowSpec, error) {
@@ -275,11 +302,12 @@ func convertInterfaceMaps(src map[interface{}]interface{}) map[string]interface{
 //
 
 type workflowSpec struct {
-	APIVersion  string
-	Description string
-	Output      string
-	Tasks       map[string]*taskSpec
-	Dataflow    dataflowSpec
+	APIVersion     string
+	Description    string
+	Output         string
+	Tasks          map[string]*taskSpec
+	Dataflow       dataflowSpec
+	ProvenanceMeta provenanceMeta `yaml:"provenanceMeta"`
 }
 
 type execOpts struct {
@@ -289,14 +317,21 @@ type execOpts struct {
 }
 
 type taskSpec struct {
-	ID       string
-	Run      string
-	Inputs   interface{}
-	Requires []string
-	ExecOpts execOpts `yaml:"execOpts"`
+	ID             string
+	Run            string
+	Inputs         interface{}
+	Requires       []string
+	ExecOpts       execOpts       `yaml:"execOpts"`
+	ProvenanceMeta provenanceMeta `yaml:"provenanceMeta"`
 }
 
 type dataflowSpec struct {
 	ConsentCheck bool `yaml:"consentCheck"`
 	Provenance   bool
+}
+
+type provenanceMeta struct {
+	InputSource string `yaml:"inputSource"`
+	OutputDest  string `yaml:"outputDest"`
+	Predecessor string
 }

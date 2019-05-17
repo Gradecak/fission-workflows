@@ -50,6 +50,8 @@ message WorkflowSpec {
     // tasks data privacy measures should be taken. Such as verifying consent and
     // generating provenance data or region locking the execution of workflow
     DataFlowSpec dataflow = 8;
+
+    ProvenanceMetadata provenanceMeta = 9;
 }
 
 //
@@ -119,6 +121,11 @@ message WorkflowInvocationSpec {
     // header. If the dataflow spec calls for a consent check this field is
     // required to proceed with an invocation
     string consentId = 6;
+
+    // Optional map of taskId's to Zones, allowing us to take into account which
+    // zone a task should be executed in at RUN-TIME rather then creation time
+    // if a given task identifier is not present it is ignored
+    map<string, Zone> taskHints = 7;
 }
 
 message WorkflowInvocationStatus {
@@ -192,6 +199,8 @@ message TaskSpec {
     google.protobuf.Duration timeout = 7;
 
     TaskDataflowSpec execConstraints = 8;
+
+    ProvenanceMetadata provenanceMeta = 9;
 
 }
 
@@ -378,4 +387,13 @@ enum Zone {
     IR    = 3;
     AU    = 4;
     FR    = 5;
+}
+
+message ProvenanceMetadata {
+    // if the Task takes an input from a database
+    string inputSource = 1;
+    // identify if workflow/task outputs to database
+    string outputDest = 2;
+    // a predecessor to link the workflow to.
+    string predecessor = 3;
 }

@@ -31,3 +31,10 @@ message ArrayValue {
 }
 
 message NilValue {}
+
+
+// Dirty Rotten Hack
+
+message SchedulerValues {
+    map<string, TypedValue> value = 1;
+}

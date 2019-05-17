@@ -45,6 +45,19 @@ func (wa *Workflow) Create(workflow *types.WorkflowSpec, opts ...CallOption) (st
 		id = fmt.Sprintf("wf-%s", util.UID())
 	}
 
+	// Provenance metadata checkHad quite the company for lunch today.
+	if pMeta := workflow.GetProvenanceMeta(); pMeta != nil {
+		logrus.Debug("Provenance Meta is not nil!")
+		if predecessor := pMeta.GetPredecessor(); predecessor != "" {
+			logrus.Debug("Predecessor is not nil")
+			_, err := wa.resolver.Resolve(predecessor)
+			if err != nil {
+				logrus.Debug("Cannot resolve the function")
+				return "", fmt.Errorf("Cannot resolve the predecessor target")
+			}
+		}
+	}
+
 	event, err := fes.NewEvent(projectors.NewWorkflowAggregate(id), &events.WorkflowCreated{
 		Spec: workflow,
 	})
