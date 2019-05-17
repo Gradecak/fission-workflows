@@ -3,13 +3,13 @@ package provenance
 import (
 	"errors"
 	"github.com/fission/fission-workflows/pkg/types"
+	"github.com/sirupsen/logrus"
 )
 
 type Store interface {
 	Save(*types.Node) error
 }
 
-// TODO
 func ValidateGraph(n *types.Node, prev types.Node_Type) error {
 	switch n.Type {
 	case types.Node_ROOT:
@@ -21,7 +21,7 @@ func ValidateGraph(n *types.Node, prev types.Node_Type) error {
 		edges := n.GetEdges()
 		var err error = nil
 		for _, e := range edges {
-			err = ValidateGraph(e, types.Node_ROOT)
+			err = ValidateGraph(e.Dst, types.Node_ROOT)
 			if err != nil {
 				return err
 			}

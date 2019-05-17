@@ -19,3 +19,5 @@ revive.toml
 /fission-workflows-proxy-windows
 /fission-workflows-proxy-osx
 /fission-workflows-proxy
+
+.#*

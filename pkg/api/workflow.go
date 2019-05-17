@@ -45,7 +45,9 @@ func (wa *Workflow) Create(workflow *types.WorkflowSpec, opts ...CallOption) (st
 		id = fmt.Sprintf("wf-%s", util.UID())
 	}
 
-	// Provenance metadata checkHad quite the company for lunch today.
+	// Ensure that if provenance metadata is present describing the
+	// predecessor dependancy, the predecssor is a valid
+	// Workflow/Cloudfunction in the system
 	if pMeta := workflow.GetProvenanceMeta(); pMeta != nil {
 		logrus.Debug("Provenance Meta is not nil!")
 		if predecessor := pMeta.GetPredecessor(); predecessor != "" {

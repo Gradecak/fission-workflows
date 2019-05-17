@@ -360,9 +360,8 @@ message ConsentStatus {
     Status status = 1;
 }
 
-// Graph structure for boradcasting provenance data, it is up to the client to
-// decode the message into a particular graph format
-
+// Graph structure for boradcasting provenance data, it is up to the reciever or
+// a middleware layer to decode the message into a particular graph format
 message Node {
     enum Type {
         TASK = 0;
@@ -375,9 +374,14 @@ message Node {
     // sources
     string tag = 2;
     // edges only applicable when type = Dataflow (link dataflow to tasks)
-    repeated Node edges = 4;
+    repeated Edge edges = 4;
     // predecessor will only be applicable when Type = DATAFLOW
-    Node predecessor = 5;
+    string predecessor = 5;
+}
+
+message Edge {
+  string edgeType = 1;
+  Node dst = 2;
 }
 
 enum Zone {
@@ -390,10 +394,14 @@ enum Zone {
 }
 
 message ProvenanceMetadata {
-    // if the Task takes an input from a database
+    // if the Task takes an input from a source outside of http invocation
     string inputSource = 1;
-    // identify if workflow/task outputs to database
+    // identify if workflow/task outputs to destination outside of the response produced
     string outputDest = 2;
     // a predecessor to link the workflow to.
     string predecessor = 3;
+    // Operation type for task (read/write/transform etc)
+    string opType = 4;
+    // additional meta
+    string meta = 5;
 }

@@ -2,7 +2,7 @@ package nats
 
 import (
 	fesNATS "github.com/fission/fission-workflows/pkg/fes/backend/nats"
-	"github.com/fission/fission-workflows/pkg/provenance"
+	//"github.com/fission/fission-workflows/pkg/provenance"
 	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/fission/fission-workflows/pkg/util"
 	"github.com/golang/protobuf/proto"
@@ -30,12 +30,6 @@ func NewPublisher(cnf fesNATS.Config) (*Publisher, error) {
 }
 
 func (p *Publisher) Save(graph *types.Node) error {
-	err := provenance.ValidateGraph(graph, types.Node_UNDEF)
-	if err != nil {
-		logrus.Error(err.Error())
-		return err
-	}
-
 	ba, err := proto.Marshal(graph)
 	if err != nil {
 		logrus.Error(err.Error())
