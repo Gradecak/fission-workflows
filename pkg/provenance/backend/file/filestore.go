@@ -13,7 +13,7 @@ type Publisher struct {
 }
 
 func NewPublisher(fName string) (*Publisher, error) {
-	file, err := os.Open(fName)
+	file, err := os.Create(fName)
 	if err != nil {
 		return nil, err
 	}

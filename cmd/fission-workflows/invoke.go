@@ -92,11 +92,14 @@ var cmdInvoke = cli.Command{
 		}
 
 		client := getClient(ctx)
-		spec := &types.WorkflowInvocationSpec{
-			WorkflowId: workflowID,
-			Inputs:     inputs,
-		}
-		types.NewWorkflowInvocationSpec(workflowID, time.Now().Add(timeout))
+		// spec := &types.WorkflowInvocationSpec{
+		// 	WorkflowId: workflowID,
+		// 	Inputs:     inputs,
+		// 	ConsentId:  "poo",
+		// }
+		spec := types.NewWorkflowInvocationSpec(workflowID, time.Now().Add(timeout))
+		spec.Inputs = inputs
+		spec.ConsentId = "test"
 		md, err := client.Invocation.Invoke(ctx, spec)
 		if err != nil {
 			logrus.Fatalf("Error occurred while invoking workflow: %v", err)

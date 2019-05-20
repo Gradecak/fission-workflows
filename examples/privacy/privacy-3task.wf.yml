@@ -7,13 +7,17 @@ output: TaskC
 tasks:
   TaskA:
     run: hello
+    inputs:
+      headers:
+        X-CustomFn: "tr"
     execOpts:
       multizone: true
   TaskB:
     run: hello
     inputs:
-      default:
-        previous: "{$.Tasks.TaskA.Output}"
+      headers:
+        X-CustomFn: "tr"
+      default: "{$.Tasks.TaskA.Output}"
     requires:
       - TaskA
     execOpts:
@@ -21,8 +25,9 @@ tasks:
   TaskC:
     run: hello
     inputs:
-      default:
-        previous: "{$.Tasks.TaskB.Output}"
+      headers:
+        X-CustomFn: "tr"
+      default: "{$.Tasks.TaskB.Output}"
     requires:
       - TaskB
     execOpts:
