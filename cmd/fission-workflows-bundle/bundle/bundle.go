@@ -28,6 +28,7 @@ import (
 	"github.com/fission/fission-workflows/pkg/fnenv/native"
 	"github.com/fission/fission-workflows/pkg/fnenv/native/builtin"
 	"github.com/fission/fission-workflows/pkg/fnenv/workflows"
+	fprov "github.com/fission/fission-workflows/pkg/provenance/backend/file"
 	prov "github.com/fission/fission-workflows/pkg/provenance/backend/nats"
 	"github.com/fission/fission-workflows/pkg/scheduler"
 	"github.com/fission/fission-workflows/pkg/types"
@@ -116,6 +117,8 @@ type Options struct {
 	Metrics              bool
 	Debug                bool
 	UseNats              bool
+	ProvNats             bool
+	ConsentNats          bool
 }
 
 type FissionOptions struct {
@@ -273,8 +276,18 @@ func Run(ctx context.Context, opts *Options) error {
 		extensions := &DataflowApiExtensions{}
 		if opts.Dataflow {
 			log.Info("Dataflow extensions enabled")
-			extensions.provenance = setupProvenanceAPI(*opts.NATS)
-			extensions.consent = setupConsentNatsAPI(*opts.NATS)
+			if opts.ProvNats {
+				extensions.provenance = setupProvenanceNatsAPI(*opts.NATS)
+			} else {
+				extensions.provenance = setupProvenanceFileAPI()
+			}
+
+			if opts.ConsentNats {
+				extensions.consent = setupConsentNatsAPI(*opts.NATS)
+			} else {
+				extensions.consent = setupConsentMemAPI()
+			}
+
 			// start the NATS subscription for consent events
 			extensions.consent.WatchConsent()
 		}
@@ -419,7 +432,7 @@ func setupNatsEventStoreClient(config nats.Config) *nats.EventStore {
 	return es
 }
 
-func setupProvenanceAPI(config nats.Config) *api.Provenance {
+func setupProvenanceNatsAPI(config nats.Config) *api.Provenance {
 	pub, err := prov.NewPublisher(config)
 	if err != nil {
 		panic(err)
@@ -558,6 +571,14 @@ func setupWorkflowController(store *store.Workflows, es fes.Backend,
 	wfAPI := api.NewWorkflowAPI(es, fnenv.NewMetaResolver(fnResolvers))
 	exec := executor.NewLocalExecutor(10, 1000)
 	return controller.NewWorkflowMetaController(wfAPI, store, exec, workflowStorePollInterval)
+}
+
+func setupProvenanceFileAPI() *api.Provenance {
+	pub, err := fprov.NewPublisher("provenance.grph")
+	if err != nil {
+		panic(err)
+	}
+	return api.NewProvenance(pub)
 }
 
 func setupMetricsEndpoint(apiMux *http.ServeMux) {

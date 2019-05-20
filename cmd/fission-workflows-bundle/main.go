@@ -62,6 +62,8 @@ func main() {
 			Debug:                c.Bool("debug"),
 			FissionProxy:         proxyConfig,
 			UseNats:              c.Bool("nats"),
+			ProvNats:             c.Bool("prov-nats"),
+			ConsentNats:          c.Bool("consent-nats"),
 		})
 	}
 	cliApp.Run(os.Args)
@@ -139,6 +141,14 @@ func createCli() *cli.App {
 		cli.BoolFlag{
 			Name:  "nats",
 			Usage: "Use NATS as the event store",
+		},
+		cli.BoolFlag{
+			Name:  "prov-nats",
+			Usage: "Use NATS for publishing provenance",
+		},
+		cli.BoolFlag{
+			Name:  "consent-nats",
+			Usage: "Use NATS for recieving provenance",
 		},
 		// Dataflow specifics
 		cli.BoolFlag{
