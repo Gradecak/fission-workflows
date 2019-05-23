@@ -227,6 +227,9 @@ message TaskStatus {
     // is deemed to busy or zoneHints suggest the better alternative for execution
     // map<function-zone, FnRef>
     map<string, FnRef> altFnRefs = 5;
+
+    // Record the original function identified in the task spec run field.
+    string baseFnName = 6;
 }
 
 message TaskDependencyParameters {

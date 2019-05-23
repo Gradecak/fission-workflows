@@ -121,6 +121,23 @@ func (m *WorkflowInvocation) Tasks() map[string]*Task {
 	return tasks
 }
 
+func (m *WorkflowInvocation) GetPreferredZone(t *Task) (*FnRef, bool) {
+	taskName := t.Metadata.GetId()
+	// check if we got runtime hints for task zone
+	if hints := m.GetSpec().GetTaskHints(); hints != nil {
+		zone, ok := hints[taskName]
+		if !ok {
+			return nil, false
+		}
+		ref, err := t.GetZoneVariant(zone)
+		if err != nil {
+			return nil, false
+		}
+		return ref, true
+	}
+	return nil, false
+}
+
 //
 // WorkflowInvocationStatus
 //
@@ -201,6 +218,37 @@ func (ti TaskInvocationStatus) Successful() bool {
 
 func (m *Task) ID() string {
 	return m.GetMetadata().GetId()
+}
+
+func (m *Task) GetZoneLock() (Zone, bool) {
+	z := m.GetSpec().GetExecConstraints().GetZoneLock()
+	return z, z != Zone_UNDEF
+}
+
+func (m *Task) GetZoneHint() (Zone, bool) {
+	z := m.GetSpec().GetExecConstraints().GetZoneHint()
+	return z, z != Zone_UNDEF
+}
+
+func (m *Task) GetAltFnRefs() []*FnRef {
+	r := []*FnRef{}
+	for _, ref := range m.GetStatus().GetAltFnRefs() {
+		r = append(r, ref)
+	}
+	return r
+}
+
+func (m *Task) GetZoneVariant(z Zone) (*FnRef, error) {
+
+	if z == Zone_UNDEF {
+		return nil, fmt.Errorf("Zone provided is undefined")
+	}
+	altFnRefs := m.GetStatus().GetAltFnRefs()
+	ref, ok := altFnRefs[ZoneVariant(m.GetStatus().BaseFnName, z)]
+	if !ok {
+		return nil, fmt.Errorf("Could not find zone %s in available environemnts", Zone_name[int32(z)])
+	}
+	return ref, nil
 }
 
 //
@@ -438,7 +486,6 @@ func GetZoneRegexp() *regexp.Regexp {
 		regexpStr += zone
 	}
 	regexpStr += ")"
-	logrus.Debugf("REGEXP STRING %s", regexpStr)
 	//compile the regexp string
 	zoneRegexp = regexp.MustCompile(regexpStr)
 	return zoneRegexp
@@ -446,30 +493,51 @@ func GetZoneRegexp() *regexp.Regexp {
 
 // Given a function-id return a list of zone suffixed function id's
 func GenZoneVariants(fnId string) []string {
-	//fns := make([]string, len(Zone_name)-2)
 	fns := []string{}
-	//fns = append(fns, fnId)
 	for i, v := range Zone_name {
 		if i != 0 {
 			fns = append(fns, fmt.Sprintf("%s-%s", fnId, strings.ToLower(v)))
 		}
 	}
-	logrus.Debug("ZONE VARIANTS: %v", fns)
 	return fns
+}
+
+func ZoneVariant(fnRef string, z Zone) string {
+	zoneName := Zone_name[int32(z)]
+	return fmt.Sprintf("%s-%s", fnRef, strings.ToLower(zoneName))
+}
+
+func GetZoneString(fnRef string) string {
+	re := GetZoneRegexp()
+	zone := re.Find([]byte(fnRef))
+	if zone == nil {
+		return "UNDEF"
+	}
+	// convert to string and remove the '-' from begining of string
+	return strings.ToUpper(string(zone)[1:])
+}
+
+func GetZone(fnRef string) Zone {
+	return Zone(Zone_value[GetZoneString(fnRef)])
+}
+
+func ParseZoneHints(inpt map[string]interface{}) map[string]Zone {
+	taskZones := map[string]Zone{}
+	for task, zone := range inpt {
+		if zName, ok := zone.(string); ok {
+			if z := Zone(Zone_value[zName]); z != Zone_UNDEF {
+				taskZones[task] = z
+			}
+		} else {
+			logrus.Errorf("Cannot convert interface to string")
+		}
+	}
+	return taskZones
 }
 
 //
 // FnRef
 //
 func (ref *FnRef) GenZone() Zone {
-	re := GetZoneRegexp()
-
-	zone := re.Find([]byte(ref.GetID()))
-	if zone == nil {
-		return Zone(0) //UNDEF
-	}
-	logrus.Debugf("ZONE FOUND %s", zone)
-	// convert to string and remove the '-' from begining of string
-	zn := strings.ToUpper(string(zone)[1:])
-	return Zone(Zone_value[zn])
+	return GetZone(ref.GetID())
 }

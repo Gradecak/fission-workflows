@@ -56,6 +56,10 @@ var cmdInvoke = cli.Command{
 			Name:  "inputs",
 			Usage: "Sets the inputs to provided value. Expects a JSON object.",
 		},
+		cli.StringFlag{
+			Name:  "taskZones",
+			Usage: "Sets the zone hints the scheduler should use when executing a task. Expects a JSON object of {taskName:Zone}",
+		},
 		cli.DurationFlag{
 			Name:  "poll",
 			Value: 10 * time.Millisecond,
@@ -91,6 +95,17 @@ var cmdInvoke = cli.Command{
 			inputs = typedvalues.MustWrapMapTypedValue(inputMap)
 		}
 
+		zones := map[string]types.Zone{}
+		if jsonTaskZones := ctx.String("taskZones"); len(jsonTaskZones) > 0 {
+			inpt := map[string]interface{}{}
+			err := json.Unmarshal([]byte(jsonTaskZones), &inpt)
+			if err != nil {
+				logrus.Fatalf("Failed to parse provided zones to JSON object: %v", err)
+			}
+			zones = types.ParseZoneHints(inpt)
+		}
+		logrus.Infof("ZONES: %+v", zones)
+
 		client := getClient(ctx)
 		// spec := &types.WorkflowInvocationSpec{
 		// 	WorkflowId: workflowID,
@@ -100,6 +115,8 @@ var cmdInvoke = cli.Command{
 		spec := types.NewWorkflowInvocationSpec(workflowID, time.Now().Add(timeout))
 		spec.Inputs = inputs
 		spec.ConsentId = "test"
+		spec.TaskHints = zones
+
 		md, err := client.Invocation.Invoke(ctx, spec)
 		if err != nil {
 			logrus.Fatalf("Error occurred while invoking workflow: %v", err)

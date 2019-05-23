@@ -10,6 +10,8 @@ tasks:
     inputs:
       headers:
         X-CustomFn: "tr"
+      # query:
+      #   runtime: 1
     execOpts:
       multizone: true
   TaskB:

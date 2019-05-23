@@ -3,7 +3,7 @@ package provenance
 import (
 	"errors"
 	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/sirupsen/logrus"
+	// "github.com/sirupsen/logrus"
 )
 
 type Store interface {

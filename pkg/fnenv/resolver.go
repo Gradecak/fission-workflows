@@ -172,10 +172,10 @@ func ResolveTask(ps Resolver, tasks ...*types.TaskSpec) (map[string]*types.FnRef
 		}
 	}
 
-	// A little bit of a hack... in the case of multizone tasks, in case the
-	// base function ref (eg, hello) doesnt resolve, but a zone variant does
-	// (eg hello-nl) we must change the FunctionRef of the taskSpec to the zone
-	// variant in order to be able to execute the Task
+	// In the case of duplicate tasks we only run resolver on one of them.
+	// This means that for the second duplicate task we have to explicitly
+	// set the function refs as the task could potentially be intended for a
+	// different zone
 	for _, t := range tasks {
 		if uTask, ok := uniqueTasks[t.FunctionRef]; ok {
 			t.FunctionRef = uTask.FunctionRef
@@ -205,19 +205,10 @@ func resolveTask(ps Resolver, id string, task *types.TaskSpec, resolvedC chan []
 	}
 
 	// resolve all of the functions across all zones for the given task
-	for i, r := range toResolve {
+	for _, r := range toResolve {
 		t, err := ps.Resolve(r)
 		if err != nil {
 			logrus.Errorf("Error resolving fn %v, reason: %+v --- Skipping", r, err)
-
-			// if the current function ref couldnt be resolved, move
-			// the TaskSpec.FnRef on to the next function in the
-			// list. useful when its a multizone task and the base
-			// task function does not exist eg hello-world -->
-			// doesn't exist .. hello-world-nl --> exists
-			if r == task.FunctionRef && i < len(toResolve)-1 {
-				task.FunctionRef = toResolve[i+1]
-			}
 			continue
 		}
 		resolved = append(resolved, sourceFnRef{

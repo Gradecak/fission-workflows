@@ -117,16 +117,30 @@ func (wa *Workflow) Parse(workflow *types.Workflow) (map[string]*types.TaskStatu
 
 	taskStatuses := map[string]*types.TaskStatus{}
 	for id, t := range workflow.Spec.Tasks {
-		fnRef, ok := resolvedFns[t.FunctionRef]
-		if !ok {
-			logrus.Errorf("COULD NOT FIND RESOLVED FOR %v", t.FunctionRef)
+		var ref *types.FnRef
+		// Grab the FnRef for the task run target, if it failed to
+		// resolve, check if a zone variant was resolved and use that
+		// instead
+		if fnRef, ok := resolvedFns[t.FunctionRef]; ok {
+			ref = fnRef
+		} else {
+			zoneVariants := types.GenZoneVariants(t.FunctionRef)
+			for _, zoneVar := range zoneVariants {
+				if fnRef, ok := resolvedFns[zoneVar]; ok {
+					ref = fnRef
+					break
+				}
+			}
+			if ref == nil {
+				return nil, fmt.Errorf("Could not resolve run target for Task %v", t.FunctionRef)
+			}
 		}
-		// delete(resolvedFns, t.FunctionRef) // only keep alternative Fns
 		taskStatuses[id] = &types.TaskStatus{
-			UpdatedAt: ptypes.TimestampNow(),
-			FnRef:     fnRef,
-			Status:    types.TaskStatus_READY,
-			AltFnRefs: resolvedFns,
+			UpdatedAt:  ptypes.TimestampNow(),
+			FnRef:      ref,
+			Status:     types.TaskStatus_READY,
+			AltFnRefs:  resolvedFns,
+			BaseFnName: t.FunctionRef,
 		}
 	}
 
