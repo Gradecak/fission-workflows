@@ -25,6 +25,7 @@ type client struct {
 	Admin      *httpclient.AdminAPI
 	Workflow   *httpclient.WorkflowAPI
 	Invocation *httpclient.InvocationAPI
+	Consent    *httpclient.ConsentAPI
 }
 
 func getClient(ctx Context) client {
@@ -54,6 +55,7 @@ func getClient(ctx Context) client {
 		Admin:      httpclient.NewAdminAPI(url, httpClient),
 		Workflow:   httpclient.NewWorkflowAPI(url, httpClient),
 		Invocation: httpclient.NewInvocationAPI(url, httpClient),
+		Consent:    httpclient.NewConsentAPI(url, httpClient),
 	}
 }
 

@@ -17,8 +17,12 @@ func NewConsentAPI(cs consent.ConsentStore) *Consent {
 	return &Consent{cs}
 }
 
-func (capi *Consent) Query(cid consent.ID) types.ConsentStatus {
+func (capi *Consent) Query(cid consent.ID) *types.ConsentStatus {
 	return capi.Get(cid)
+}
+
+func (capi *Consent) Update(msg *types.ConsentMessage) error {
+	return capi.Set(msg)
 }
 
 // Listener starts the Consent Listener and returns. Consent Listener will
@@ -29,7 +33,7 @@ func (capi *Consent) WatchConsent() {
 
 // Given the workflow paramaters, resolve the inputs and return the consent
 // ConsentStatus of the workflow
-func (capi *Consent) QueryWorkflowConsent(spec *types.WorkflowInvocationSpec) types.ConsentStatus {
+func (capi *Consent) QueryWorkflowConsent(spec *types.WorkflowInvocationSpec) *types.ConsentStatus {
 	consentId := spec.GetConsentId()
 	status := capi.Get(consentId)
 	return status

@@ -363,6 +363,11 @@ message ConsentStatus {
     Status status = 1;
 }
 
+message ConsentMessage {
+    string ID = 1;
+    ConsentStatus status = 2;
+}
+
 // Graph structure for boradcasting provenance data, it is up to the reciever or
 // a middleware layer to decode the message into a particular graph format
 message Node {

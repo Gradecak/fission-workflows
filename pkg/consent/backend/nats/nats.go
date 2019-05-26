@@ -50,14 +50,14 @@ func NewNatsConsentStore(cnf fesNATs.Config) (*Store, error) {
 	return store, nil
 }
 
-func (cb Store) Get(cid consent.ID) types.ConsentStatus {
+func (cb Store) Get(cid consent.ID) *types.ConsentStatus {
 	val, exist := (*cb.Consent)[cid]
 
 	// if consent not consent status we assume it is granted
 	if !exist {
-		return types.ConsentStatus{types.ConsentStatus_GRANTED}
+		return &types.ConsentStatus{types.ConsentStatus_GRANTED}
 	}
-	return *val
+	return val
 }
 
 func (cb *Store) Listen() {
@@ -68,7 +68,7 @@ func (cb *Store) Listen() {
 			if err != nil {
 				logrus.Error("Failed to unmarshal Consent Message")
 			}
-			cb.setConsent(msg)
+			cb.Set(msg)
 		},
 		stan.DeliverAllAvailable())
 
@@ -79,12 +79,13 @@ func (cb *Store) Listen() {
 	//sub.Unsubscribe()
 }
 
-func (cb Store) setConsent(m *consent.ConsentMessage) {
-	(*cb.Consent)[m.GetId()] = m.GetStatus()
+func (cb Store) Set(m *types.ConsentMessage) error {
+	(*cb.Consent)[m.GetID()] = m.GetStatus()
+	return nil
 }
 
-func toConsentMsg(data []byte) (*consent.ConsentMessage, error) {
-	cmsg := &consent.ConsentMessage{}
+func toConsentMsg(data []byte) (*types.ConsentMessage, error) {
+	cmsg := &types.ConsentMessage{}
 	err := proto.Unmarshal(data, cmsg)
 	if err != nil {
 		return nil, err

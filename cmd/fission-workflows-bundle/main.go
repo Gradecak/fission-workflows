@@ -56,6 +56,7 @@ func main() {
 			Dataflow:             c.Bool("dataflow"),
 			AdminAPI:             c.Bool("api") || c.Bool("api-admin"),
 			WorkflowAPI:          c.Bool("api") || c.Bool("api-workflow"),
+			ConsentAPI:           c.Bool("api") || c.Bool("api-consent"),
 			InvocationAPI:        c.Bool("api") || c.Bool("api-workflow-invocation"),
 			HTTPGateway:          c.Bool("api") || c.Bool("api-http"),
 			Metrics:              c.Bool("metrics"),
@@ -223,6 +224,10 @@ func createCli() *cli.App {
 		cli.BoolFlag{
 			Name:  "api-workflow",
 			Usage: "Serve the workflow gRPC api",
+		},
+		cli.BoolFlag{
+			Name:  "api-consent",
+			Usage: "Serve the consent gRPC api",
 		},
 		cli.BoolFlag{
 			Name:  "api-admin",

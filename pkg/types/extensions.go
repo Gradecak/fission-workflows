@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"github.com/fission/fission-workflows/pkg/types/typedvalues"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // Types other than specified in protobuf
@@ -138,6 +140,10 @@ func (m *WorkflowInvocation) GetPreferredZone(t *Task) (*FnRef, bool) {
 	return nil, false
 }
 
+func (m *WorkflowInvocation) HasConsentId() bool {
+	return len(m.GetSpec().GetConsentId()) > 0
+}
+
 //
 // WorkflowInvocationStatus
 //
@@ -173,6 +179,10 @@ func (m WorkflowInvocationStatus) Finished() bool {
 
 func (m WorkflowInvocationStatus) Successful() bool {
 	return m.GetStatus() == WorkflowInvocationStatus_SUCCEEDED
+}
+
+func (m WorkflowInvocationStatus) LastUpdated() (time.Time, error) {
+	return ptypes.Timestamp(m.GetUpdatedAt())
 }
 
 //

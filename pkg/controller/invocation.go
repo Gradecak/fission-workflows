@@ -103,6 +103,12 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 		}
 	}
 
+	// Check if the invocation is not in a terminal state
+	if invocation.GetStatus().Finished() {
+		return ctrl.Done{Msg: fmt.Sprintf("invocation is in a terminal state (%v)",
+			invocation.GetStatus().GetStatus().String())}
+	}
+
 	// If consent check is required, ensure that the invocation spec
 	// features consentId field and that the value in the field has not been
 	// revoked when retrieved from consent store
@@ -127,13 +133,8 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 					return c.invocationAPI.Fail(invocation.ID(), err)
 				},
 			})
+			return ctrl.Err{Err: err}
 		}
-	}
-
-	// Check if the invocation is not in a terminal state
-	if invocation.GetStatus().Finished() {
-		return ctrl.Done{Msg: fmt.Sprintf("invocation is in a terminal state (%v)",
-			invocation.GetStatus().GetStatus().String())}
 	}
 
 	// Check if the deadline has not been exceeded
@@ -597,6 +598,13 @@ func NewInvocationMetaController(executor *executor.LocalExecutor, invocations *
 			if len(invocationID) == 0 {
 				return nil, fmt.Errorf("invocation ID missing in event: %v %v", event.Aggregate, event.Event.GetType())
 			}
+			// invocation, ok := event.Updated.(*types.WorkflowInvocation)
+			// if ok &&
+			// 	consentAPI != nil &&
+			// 	invocation.GetDataflowSpec().GetConsentCheck() &&
+			// 	!invocation.HasConsentId() {
+			// 	return nil, fmt.Errorf("invocation is missing CONSENT")
+			// }
 			return NewInvocationController(invocationID, executor, invocationAPI, taskAPI, scheduler,
 				stateStore, span, logrus.WithField("key", invocationID), consentAPI, provAPI), nil
 		}),

@@ -59,6 +59,7 @@ func main() {
 		cmdInvocation,
 		cmdValidate,
 		cmdVersion,
+		cmdConsent,
 	}
 	app.Action = func(ctx *cli.Context) error {
 		if ctx.GlobalBool("plugin") {

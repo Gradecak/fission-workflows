@@ -427,6 +427,19 @@ func request_WorkflowInvocationAPI_Validate_0(ctx context.Context, marshaler run
 
 }
 
+func request_ConsentAPI_Update_0(ctx context.Context, marshaler runtime.Marshaler, client ConsentAPIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq types.ConsentMessage
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.Update(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
 func request_AdminAPI_Status_0(ctx context.Context, marshaler runtime.Marshaler, client AdminAPIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq empty.Empty
 	var metadata runtime.ServerMetadata
@@ -1094,6 +1107,84 @@ var (
 	forward_WorkflowInvocationAPI_Events_0 = runtime.ForwardResponseMessage
 
 	forward_WorkflowInvocationAPI_Validate_0 = runtime.ForwardResponseMessage
+)
+
+// RegisterConsentAPIHandlerFromEndpoint is same as RegisterConsentAPIHandler but
+// automatically dials to "endpoint" and closes the connection when "ctx" gets done.
+func RegisterConsentAPIHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+	conn, err := grpc.Dial(endpoint, opts...)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Printf("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+			return
+		}
+		go func() {
+			<-ctx.Done()
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Printf("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+		}()
+	}()
+
+	return RegisterConsentAPIHandler(ctx, mux, conn)
+}
+
+// RegisterConsentAPIHandler registers the http handlers for service ConsentAPI to "mux".
+// The handlers forward requests to the grpc endpoint over "conn".
+func RegisterConsentAPIHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterConsentAPIHandlerClient(ctx, mux, NewConsentAPIClient(conn))
+}
+
+// RegisterConsentAPIHandler registers the http handlers for service ConsentAPI to "mux".
+// The handlers forward requests to the grpc endpoint over the given implementation of "ConsentAPIClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ConsentAPIClient"
+// doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
+// "ConsentAPIClient" to call the correct interceptors.
+func RegisterConsentAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ConsentAPIClient) error {
+
+	mux.Handle("POST", pattern_ConsentAPI_Update_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		if cn, ok := w.(http.CloseNotifier); ok {
+			go func(done <-chan struct{}, closed <-chan bool) {
+				select {
+				case <-done:
+				case <-closed:
+					cancel()
+				}
+			}(ctx.Done(), cn.CloseNotify())
+		}
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ConsentAPI_Update_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ConsentAPI_Update_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+var (
+	pattern_ConsentAPI_Update_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"consent", "update"}, ""))
+)
+
+var (
+	forward_ConsentAPI_Update_0 = runtime.ForwardResponseMessage
 )
 
 // RegisterAdminAPIHandlerFromEndpoint is same as RegisterAdminAPIHandler but

@@ -13,15 +13,15 @@ import "google/api/annotations.proto";
 service WorkflowAPI {
     rpc Create (fission.workflows.types.WorkflowSpec) returns (fission.workflows.types.ObjectMetadata) {
         option (google.api.http) = {
-           post: "/workflow"
-           body: "*"
+            post: "/workflow"
+            body: "*"
         };
     }
 
     rpc CreateSync (fission.workflows.types.WorkflowSpec) returns (fission.workflows.types.Workflow) {
         option (google.api.http) = {
-           post: "/workflow/sync"
-           body: "*"
+            post: "/workflow/sync"
+            body: "*"
         };
     }
 
@@ -81,7 +81,7 @@ service WorkflowInvocationAPI {
             body: "*"
             additional_bindings {
                 get: "/invocation/sync"
-			}
+            }
         };
     }
 
@@ -91,7 +91,7 @@ service WorkflowInvocationAPI {
             body: "*"
             additional_bindings {
                 put: "/invocation/{invocationID}/tasks"
-			}
+            }
         };
     }
 
@@ -131,6 +131,15 @@ service WorkflowInvocationAPI {
     rpc Validate (fission.workflows.types.WorkflowInvocationSpec) returns (google.protobuf.Empty) {
         option (google.api.http) = {
             post: "/invocation/validate"
+            body: "*"
+        };
+    }
+}
+
+service ConsentAPI {
+    rpc Update (fission.workflows.types.ConsentMessage) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            post: "/consent/update"
             body: "*"
         };
     }

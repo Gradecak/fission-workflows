@@ -111,6 +111,7 @@ type Options struct {
 	WorkflowController   bool
 	Dataflow             bool
 	AdminAPI             bool
+	ConsentAPI           bool
 	WorkflowAPI          bool
 	HTTPGateway          bool
 	InvocationAPI        bool
@@ -271,9 +272,9 @@ func Run(ctx context.Context, opts *Options) error {
 			}
 		}()
 	}
+	extensions := &DataflowApiExtensions{}
 	if opts.InvocationController {
 		log.Info("Running invocation controller")
-		extensions := &DataflowApiExtensions{}
 		if opts.Dataflow {
 			log.Info("Dataflow extensions enabled")
 			if opts.ProvNats {
@@ -322,7 +323,11 @@ func Run(ctx context.Context, opts *Options) error {
 		serveInvocationAPI(grpcServer, es, invocationStore, workflowStore)
 	}
 
-	if opts.AdminAPI || opts.WorkflowAPI || opts.InvocationAPI {
+	if opts.ConsentAPI {
+		serveConsentAPI(grpcServer, extensions.consent)
+	}
+
+	if opts.AdminAPI || opts.WorkflowAPI || opts.InvocationAPI || opts.ConsentAPI {
 		if opts.Metrics {
 			log.Debug("Instrumenting gRPC server with Prometheus metrics")
 			grpc_prometheus.Register(grpcServer)
@@ -350,7 +355,7 @@ func Run(ctx context.Context, opts *Options) error {
 
 		if opts.HTTPGateway {
 
-			var admin, wf, wfi string
+			var admin, wf, wfi, consent string
 			if opts.AdminAPI {
 				admin = gRPCAddress
 			}
@@ -360,7 +365,11 @@ func Run(ctx context.Context, opts *Options) error {
 			if opts.InvocationAPI {
 				wfi = gRPCAddress
 			}
-			serveHTTPGateway(ctx, grpcMux, admin, wf, wfi)
+			if opts.ConsentAPI {
+				consent = gRPCAddress
+			}
+
+			serveHTTPGateway(ctx, grpcMux, admin, wf, wfi, consent)
 		}
 
 		if opts.Metrics {
@@ -514,8 +523,14 @@ func serveInvocationAPI(s *grpc.Server, es fes.Backend, invocations *store.Invoc
 	log.Infof("Serving workflow invocation gRPC API at %s.", gRPCAddress)
 }
 
+func serveConsentAPI(s *grpc.Server, capi *api.Consent) {
+	consentServer := apiserver.NewConsent(capi)
+	apiserver.RegisterConsentAPIServer(s, consentServer)
+	log.Infof("Serving consent gRPC API at %s.", gRPCAddress)
+}
+
 func serveHTTPGateway(ctx context.Context, mux *grpcruntime.ServeMux, adminAPIAddr string, workflowAPIAddr string,
-	invocationAPIAddr string) {
+	invocationAPIAddr string, consentAPIAddr string) {
 	tracer := opentracing.GlobalTracer()
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
@@ -545,6 +560,13 @@ func serveHTTPGateway(ctx context.Context, mux *grpcruntime.ServeMux, adminAPIAd
 			panic(err)
 		}
 		log.Info("Registered Workflow WorkflowInvocation API HTTP Endpoint")
+	}
+	if consentAPIAddr != "" {
+		err := apiserver.RegisterConsentAPIHandlerFromEndpoint(ctx, mux, consentAPIAddr, opts)
+		if err != nil {
+			panic(err)
+		}
+		log.Info("Registered Consent API HTTP Endpoint")
 	}
 }
 
