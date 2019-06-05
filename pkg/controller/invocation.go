@@ -192,8 +192,9 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 			})
 			return ctrl.Err{Err: err}
 		} else {
+			// if provenance is enabled and invocation is a success
 			if c.provenanceAPI != nil {
-				c.provenanceAPI.GenerateProvenance(invocation.GetSpec().GetConsentId(), invocation.GetWorkflowSpec())
+				c.provenanceAPI.GenerateProvenance(invocation)
 			}
 			c.executor.Submit(&executor.Task{
 				TaskID:  invocation.ID() + ".success",
@@ -598,13 +599,6 @@ func NewInvocationMetaController(executor *executor.LocalExecutor, invocations *
 			if len(invocationID) == 0 {
 				return nil, fmt.Errorf("invocation ID missing in event: %v %v", event.Aggregate, event.Event.GetType())
 			}
-			// invocation, ok := event.Updated.(*types.WorkflowInvocation)
-			// if ok &&
-			// 	consentAPI != nil &&
-			// 	invocation.GetDataflowSpec().GetConsentCheck() &&
-			// 	!invocation.HasConsentId() {
-			// 	return nil, fmt.Errorf("invocation is missing CONSENT")
-			// }
 			return NewInvocationController(invocationID, executor, invocationAPI, taskAPI, scheduler,
 				stateStore, span, logrus.WithField("key", invocationID), consentAPI, provAPI), nil
 		}),

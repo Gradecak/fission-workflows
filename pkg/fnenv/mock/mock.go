@@ -2,15 +2,15 @@
 package mock
 
 import (
+	"errors"
 	"fmt"
-	"time"
-
 	"github.com/fission/fission-workflows/pkg/fnenv"
 	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/fission/fission-workflows/pkg/types/typedvalues"
 	"github.com/fission/fission-workflows/pkg/util"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 // Func is the type for mocked functions used in the mock.Runtime
@@ -154,6 +154,9 @@ func (mf *Resolver) Resolve(ref types.FnRef) (string, error) {
 	}
 
 	return fnID, nil
+}
+func (fe *Resolver) ResolveMultizone(ref types.FnRef) ([]string, error) {
+	return []string{}, errors.New("Runtime does not support multizone resolving")
 }
 
 func NewResolver() *Resolver {

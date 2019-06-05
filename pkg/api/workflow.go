@@ -48,15 +48,12 @@ func (wa *Workflow) Create(workflow *types.WorkflowSpec, opts ...CallOption) (st
 	// Ensure that if provenance metadata is present describing the
 	// predecessor dependancy, the predecssor is a valid
 	// Workflow/Cloudfunction in the system
-	if pMeta := workflow.GetProvenanceMeta(); pMeta != nil {
-		logrus.Debug("Provenance Meta is not nil!")
-		if predecessor := pMeta.GetPredecessor(); predecessor != "" {
-			logrus.Debug("Predecessor is not nil")
-			_, err := wa.resolver.Resolve(predecessor)
-			if err != nil {
-				logrus.Debug("Cannot resolve the function")
-				return "", fmt.Errorf("Cannot resolve the predecessor target")
-			}
+	if predecessor := workflow.GetPredecessor(); predecessor != "" {
+		logrus.Debug("Predecessor is not nil")
+		_, err := wa.resolver.Resolve(predecessor)
+		if err != nil {
+			logrus.Debug("Cannot resolve the function")
+			return "", fmt.Errorf("Cannot resolve the predecessor target")
 		}
 	}
 

@@ -54,6 +54,10 @@ func (r *Runtime) Resolve(ref types.FnRef) (string, error) {
 	return id, nil
 }
 
+func (fe *Runtime) ResolveMultizone(ref types.FnRef) ([]string, error) {
+	return []string{}, errors.New("Runtime does not support multizone resolving")
+}
+
 func (r *Runtime) Invoke(spec *types.TaskInvocationSpec, opts ...fnenv.InvokeOption) (*types.TaskInvocationStatus, error) {
 	cfg := fnenv.ParseInvokeOptions(opts)
 	req := (&http.Request{}).WithContext(cfg.Ctx)

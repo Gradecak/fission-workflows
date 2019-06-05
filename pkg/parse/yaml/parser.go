@@ -20,8 +20,6 @@ const (
 	metaWorkflow       = 2
 )
 
-type MetaType = int
-
 var DefaultParser = &Parser{}
 
 func Parse(r io.Reader) (*types.WorkflowSpec, error) {
@@ -75,11 +73,10 @@ func parseWorkflow(def *workflowSpec) (*types.WorkflowSpec, error) {
 	}
 
 	return &types.WorkflowSpec{
-		ApiVersion:     def.APIVersion,
-		OutputTask:     def.Output,
-		Tasks:          tasks,
-		Dataflow:       parseDataflow(&def.Dataflow),
-		ProvenanceMeta: parseProvenanceMeta(&def.ProvenanceMeta, metaWorkflow),
+		ApiVersion: def.APIVersion,
+		OutputTask: def.Output,
+		Tasks:      tasks,
+		Dataflow:   parseDataflow(&def.Dataflow),
 	}, nil
 
 }
@@ -88,6 +85,7 @@ func parseDataflow(def *dataflowSpec) *types.DataFlowSpec {
 	return &types.DataFlowSpec{
 		ConsentCheck: def.ConsentCheck,
 		Provenance:   def.Provenance,
+		Predecessor:  def.Predecessor,
 	}
 }
 
@@ -112,7 +110,10 @@ func parseTask(t *taskSpec) (*types.TaskSpec, error) {
 		logrus.Errorf("Got error %v", err)
 	}
 
-	meta := parseProvenanceMeta(&t.ProvenanceMeta, metaTask)
+	meta, err := parseProvenanceMeta(&t.ProvenanceMeta)
+	if err != nil {
+		return nil, err
+	}
 
 	result := &types.TaskSpec{
 		FunctionRef:     fn,
@@ -126,21 +127,22 @@ func parseTask(t *taskSpec) (*types.TaskSpec, error) {
 	return result, nil
 }
 
-func parseProvenanceMeta(meta *provenanceMeta, typ MetaType) *types.ProvenanceMetadata {
+func parseProvenanceMeta(meta *provenanceMeta) (*types.ProvenanceMetadata, error) {
 	m := &types.ProvenanceMetadata{}
-	if typ == metaTask {
-		if meta.InputSource != "" {
-			m.InputSource = meta.InputSource
-		}
-		if meta.OutputDest != "" {
-			m.OutputDest = meta.OutputDest
-		}
-	} else {
-		if meta.Predecessor != "" {
-			m.Predecessor = meta.Predecessor
-		}
+	var taskTypes = map[string]int{
+		"transform": 0,
+		"read":      1,
+		"write":     2,
+		"control":   3,
 	}
-	return m
+	logrus.Infof("META: %+v\n", meta.Meta)
+	if meta.Meta != "" && !json.Valid([]byte(meta.Meta)) {
+		return nil, errors.New("Provenance Meta is not valid json")
+	}
+
+	m.OpType = types.ProvenanceMetadata_OpType(taskTypes[meta.OpType])
+	m.Meta = meta.Meta
+	return m, nil
 }
 
 func parseTaskExecOpts(opts *execOpts) (*types.TaskDataflowSpec, error) {
@@ -302,12 +304,11 @@ func convertInterfaceMaps(src map[interface{}]interface{}) map[string]interface{
 //
 
 type workflowSpec struct {
-	APIVersion     string
-	Description    string
-	Output         string
-	Tasks          map[string]*taskSpec
-	Dataflow       dataflowSpec
-	ProvenanceMeta provenanceMeta `yaml:"provenanceMeta"`
+	APIVersion  string
+	Description string
+	Output      string
+	Tasks       map[string]*taskSpec
+	Dataflow    dataflowSpec
 }
 
 type execOpts struct {
@@ -328,10 +329,10 @@ type taskSpec struct {
 type dataflowSpec struct {
 	ConsentCheck bool `yaml:"consentCheck"`
 	Provenance   bool
+	Predecessor  string
 }
 
 type provenanceMeta struct {
-	InputSource string `yaml:"inputSource"`
-	OutputDest  string `yaml:"outputDest"`
-	Predecessor string
+	Meta   string `yaml:"meta"`
+	OpType string `yaml:"opType"`
 }

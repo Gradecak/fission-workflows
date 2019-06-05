@@ -70,7 +70,7 @@ func ParseFnRef(s string) (FnRef, error) {
 	scheme := u.Scheme
 	ns := u.Host
 	id := strings.Trim(u.Path, "/")
-	logrus.Debug("AFTER PARSING scheme: %s, ns: %s, id: %s", scheme, ns, id)
+	logrus.Debugf("AFTER PARSING scheme: %s, ns: %s, id: %s", scheme, ns, id)
 	if len(id) == 0 {
 		id = strings.Trim(u.Host, "/")
 		ns = ""

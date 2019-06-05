@@ -191,29 +191,31 @@ func (p *HorizonMultiZonePolicy) Evaluate(invocation *types.WorkflowInvocation) 
 
 		// set the preferred function execution environment
 		var target *types.FnRef
-		if zl, ok := task.GetZoneLock(); ok {
-			rf, err := task.GetZoneVariant(zl)
-			if err != nil {
-				return nil, fmt.Errorf("Cannot schedule Task %v to locked Zone %v", 1, 1)
-			}
-			target = rf
-		}
-
-		// Run time zone hints take precedence over hone hints provided
-		// in spec
-		if ref, ok := invocation.GetPreferredZone(task); ok {
-			target = ref
-		} else {
-			// else fall back on workflow spec zone hint
-			if zh, ok := task.GetZoneHint(); !ok {
-				alt := task.GetAltFnRefs()
-				target = alt[p.Random.Intn(len(alt))]
-			} else {
-				rf, err := task.GetZoneVariant(zh)
+		if task.GetSpec().GetExecConstraints().GetMultiZone() {
+			if zl, ok := task.GetZoneLock(); ok {
+				rf, err := task.GetZoneVariant(zl)
 				if err != nil {
 					return nil, fmt.Errorf("Cannot schedule Task %v to locked Zone %v", 1, 1)
 				}
 				target = rf
+			}
+
+			// Run time zone hints take precedence over hone hints provided
+			// in spec
+			if ref, ok := invocation.GetPreferredZone(task); ok {
+				target = ref
+			} else {
+				// else fall back on workflow spec zone hint
+				if zh, ok := task.GetZoneHint(); ok {
+					alt := task.GetAltFnRefs()
+					target = alt[p.Random.Intn(len(alt))]
+				} else {
+					rf, err := task.GetZoneVariant(zh)
+					if err != nil {
+						return nil, fmt.Errorf("Cannot schedule Task %v to locked Zone %v", 1, 1)
+					}
+					target = rf
+				}
 			}
 		}
 

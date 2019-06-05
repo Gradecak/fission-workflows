@@ -106,6 +106,7 @@ type RuntimeResolver interface {
 	// ResolveTask resolved an ambiguous target function name to a unique identifier of a function within the scope
 	// of a runtime.
 	Resolve(ref types.FnRef) (string, error)
+	ResolveMultizone(ref types.FnRef) ([]string, error)
 }
 
 type InvokeConfig struct {

@@ -3,17 +3,31 @@
 #
 # Usage example: fission fn test --name fortunewhale
 apiVersion: 1
-output: Privacy
+output: Testing
 tasks:
-  Privacy:
-    run: hello
-    execOpts:
-      multizone: true
-    provenanceMeta:
-      inputSource: "DB:That Other DB"
+  # Privacy:
+  #   run: hello
+  #   execOpts:
+  #     multizone: true
+  #   provenanceMeta:
+  #     opType: "read"
+  #     meta: '{"test":1}'
+  Testing:
+    run: if
+    inputs:
+      if: "{2 > 1}"
+      then:
+        # TODO resize image, change link
+        run: write
+        provenanceMeta:
+          opType: "write"
+      else:
+        run: read
+        provenanceMeta:
+          opType: "read"
+    # requires:
+    # - Privacy
 
 dataflow:
   consentCheck: true
-
-provenanceMeta:
   predecessor: "test"

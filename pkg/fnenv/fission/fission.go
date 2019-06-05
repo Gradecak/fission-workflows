@@ -3,6 +3,7 @@ package fission
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -221,6 +222,23 @@ func (fe *FunctionEnv) Resolve(ref types.FnRef) (string, error) {
 
 	log.Infof("Resolved fission function %s to %s", ref.ID, id)
 	return id, nil
+}
+
+func (fe *FunctionEnv) ResolveMultizone(ref types.FnRef) ([]string, error) {
+	zoneVariants := types.GenZoneVariants(ref.ID)
+	resolved := make([]string, len(zoneVariants))
+	for i, zv := range zoneVariants {
+		zoneRef, err := types.ParseFnRef(zv)
+		if err != nil {
+			logrus.Warnf("MZ resolve ERR: %v", err.Error())
+			continue // skip
+		}
+		reso, err := fe.Resolve(zoneRef)
+		if err == nil {
+			resolved[i] = reso
+		}
+	}
+	return []string{}, errors.New("Runtime does not support multizone resolving")
 }
 
 func (fe *FunctionEnv) getFnURL(fn types.FnRef) (*url.URL, error) {

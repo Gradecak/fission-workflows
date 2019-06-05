@@ -237,6 +237,7 @@ func (m *Task) GetZoneLock() (Zone, bool) {
 
 func (m *Task) GetZoneHint() (Zone, bool) {
 	z := m.GetSpec().GetExecConstraints().GetZoneHint()
+	logrus.Debugf("%+v\n", z)
 	return z, z != Zone_UNDEF
 }
 
@@ -406,6 +407,10 @@ func (m *WorkflowSpec) TaskIds() []string {
 		ids = append(ids, k)
 	}
 	return ids
+}
+
+func (m *WorkflowSpec) GetPredecessor() string {
+	return m.GetDataflow().GetPredecessor()
 }
 
 func (m *WorkflowSpec) SetDescription(s string) *WorkflowSpec {

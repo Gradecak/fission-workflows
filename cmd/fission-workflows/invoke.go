@@ -114,7 +114,7 @@ var cmdInvoke = cli.Command{
 		// }
 		spec := types.NewWorkflowInvocationSpec(workflowID, time.Now().Add(timeout))
 		spec.Inputs = inputs
-		// spec.ConsentId = "test"
+		spec.ConsentId = "test"
 		spec.TaskHints = zones
 		md, err := client.Invocation.Invoke(ctx, spec)
 		if err != nil {

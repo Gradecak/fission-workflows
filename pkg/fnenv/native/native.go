@@ -2,6 +2,7 @@
 package native
 
 import (
+	"errors"
 	"fmt"
 	"runtime/debug"
 	"time"
@@ -94,6 +95,10 @@ func (fe *FunctionEnv) Resolve(ref types.FnRef) (string, error) {
 	}
 	log.WithField("name", ref.ID).WithField("uid", ref.ID).Debug("Resolved internal function")
 	return ref.ID, nil
+}
+
+func (fe *FunctionEnv) ResolveMultizone(ref types.FnRef) ([]string, error) {
+	return []string{}, errors.New("Runtime does not support multizone resolving")
 }
 
 func (fe *FunctionEnv) RegisterFn(name string, fn InternalFunction) {

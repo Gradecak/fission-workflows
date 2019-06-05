@@ -8,6 +8,10 @@ import (
 	"gonum.org/v1/gonum/graph/simple"
 )
 
+// a handy alias to stop us having to import gonum/graph in the provenance
+// generation
+type Directed = simple.DirectedGraph
+
 type LinkedNode interface {
 	graph.Node
 	Links() []int64
@@ -33,6 +37,10 @@ func (n *TaskInvocationNode) Links() []int64 {
 type TaskSpecNode struct {
 	id string
 	*types.TaskSpec
+}
+
+func (n *TaskSpecNode) GetID() string {
+	return n.id
 }
 
 func (n *TaskSpecNode) Links() []int64 {
@@ -102,7 +110,7 @@ func NewTaskSpecIterator(contents map[string]*types.TaskSpec) *TaskSpecIterator 
 	}
 }
 
-func Parse(it Iterator) graph.Directed {
+func Parse(it Iterator) *simple.DirectedGraph {
 	depGraph := simple.NewDirectedGraph()
 	// Add Nodes
 	for ptr := 0; it.Get(ptr) != nil; ptr++ {
