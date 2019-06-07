@@ -206,7 +206,7 @@ func (p *HorizonMultiZonePolicy) Evaluate(invocation *types.WorkflowInvocation) 
 				target = ref
 			} else {
 				// else fall back on workflow spec zone hint
-				if zh, ok := task.GetZoneHint(); ok {
+				if zh, ok := task.GetZoneHint(); !ok {
 					alt := task.GetAltFnRefs()
 					target = alt[p.Random.Intn(len(alt))]
 				} else {

@@ -351,7 +351,6 @@ func (c *InvocationController) execTask(invocation *types.WorkflowInvocation, ru
 			return c.transformTaskRunOutputs(invocation, ti)
 		}))
 	if err != nil {
-		logrus.Debug("TASK INVOCATION RETURNED ERROR")
 		span.LogKV("error", err)
 		return err
 	}
@@ -359,7 +358,6 @@ func (c *InvocationController) execTask(invocation *types.WorkflowInvocation, ru
 	// Post-execution debugging
 	span.SetTag("status", updated.GetStatus().GetStatus().String())
 	if !updated.GetStatus().Successful() {
-		logrus.Debug("TASK INVOCATION STATUS NOT SUCCESS")
 		span.LogKV("error", updated.GetStatus().GetError().String())
 	}
 	if log.Level == logrus.DebugLevel {
