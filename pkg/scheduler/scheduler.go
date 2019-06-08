@@ -3,8 +3,8 @@ package scheduler
 import (
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )

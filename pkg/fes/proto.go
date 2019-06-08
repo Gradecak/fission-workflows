@@ -3,8 +3,8 @@ package fes
 import (
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/util/labels"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/gradecak/fission-workflows/pkg/util/labels"
 )
 
 // Amendments to Protobuf models

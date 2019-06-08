@@ -3,7 +3,7 @@ package validate
 import (
 	"testing"
 
-	"github.com/fission/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fission/fission-workflows/cmd/fission-workflows-bundle/bundle"
-	"github.com/fission/fission-workflows/pkg/fes/backend/nats"
-	"github.com/fission/fission-workflows/pkg/util"
+	"github.com/gradecak/fission-workflows/cmd/fission-workflows-bundle/bundle"
+	"github.com/gradecak/fission-workflows/pkg/fes/backend/nats"
+	"github.com/gradecak/fission-workflows/pkg/util"
 	natsio "github.com/nats-io/go-nats"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"

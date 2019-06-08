@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/fission/fission-workflows/pkg/apiserver"
-	"github.com/fission/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/apiserver"
+	"github.com/gradecak/fission-workflows/pkg/types"
 )
 
 type WorkflowAPI struct {

@@ -3,7 +3,7 @@ package graph
 import (
 	"hash/fnv"
 
-	"github.com/fission/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
 )

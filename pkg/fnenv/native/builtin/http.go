@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fission/fission-workflows/pkg/fnenv/http"
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
 	"github.com/golang/protobuf/proto"
+	"github.com/gradecak/fission-workflows/pkg/fnenv/http"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
 )
 
 const (

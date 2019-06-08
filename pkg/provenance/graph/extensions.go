@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"github.com/fission/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/sirupsen/logrus"
 	"hash/fnv"
 )

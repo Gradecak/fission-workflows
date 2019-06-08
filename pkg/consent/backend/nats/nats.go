@@ -1,12 +1,12 @@
 package nats
 
 import (
-	"github.com/fission/fission-workflows/pkg/consent"
+	"github.com/gradecak/fission-workflows/pkg/consent"
 	//import for the nats configs to avoid duplicate delarations
-	fesNATs "github.com/fission/fission-workflows/pkg/fes/backend/nats"
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/util"
 	"github.com/golang/protobuf/proto"
+	fesNATs "github.com/gradecak/fission-workflows/pkg/fes/backend/nats"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/util"
 	"github.com/nats-io/go-nats"
 	stan "github.com/nats-io/go-nats-streaming"
 	"github.com/sirupsen/logrus"

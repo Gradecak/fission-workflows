@@ -27,8 +27,8 @@ package events
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import fission_workflows_types1 "github.com/fission/fission-workflows/pkg/types"
-import fission_workflows_types "github.com/fission/fission-workflows/pkg/types/typedvalues"
+import fission_workflows_types1 "github.com/gradecak/fission-workflows/pkg/types"
+import fission_workflows_types "github.com/gradecak/fission-workflows/pkg/types/typedvalues"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

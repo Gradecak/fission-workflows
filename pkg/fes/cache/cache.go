@@ -3,9 +3,9 @@ package cache
 import (
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/fes"
-	"github.com/fission/fission-workflows/pkg/util/pubsub"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/gradecak/fission-workflows/pkg/fes"
+	"github.com/gradecak/fission-workflows/pkg/util/pubsub"
 	"github.com/hashicorp/golang-lru"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"

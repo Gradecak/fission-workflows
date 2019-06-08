@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/fission/fission-workflows/pkg/api/events"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/gradecak/fission-workflows/pkg/api/events"
 	"github.com/opentracing/opentracing-go"
 )
 

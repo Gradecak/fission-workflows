@@ -5,10 +5,10 @@ import (
 	"math"
 	"testing"
 
-	"github.com/fission/fission-workflows/pkg/fes"
-	"github.com/fission/fission-workflows/pkg/util/labels"
-	"github.com/fission/fission-workflows/pkg/util/pubsub"
 	"github.com/golang/protobuf/ptypes/wrappers"
+	"github.com/gradecak/fission-workflows/pkg/fes"
+	"github.com/gradecak/fission-workflows/pkg/util/labels"
+	"github.com/gradecak/fission-workflows/pkg/util/pubsub"
 	"github.com/stretchr/testify/assert"
 )
 

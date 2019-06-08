@@ -6,8 +6,8 @@ import (
 
 	"fmt"
 
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues/controlflow"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues/controlflow"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -102,7 +102,7 @@ tasks:
     run: someSh
   bar:
     run: bla
-    inputs: 
+    inputs:
       default:
         apiversion: v42
         output: $.tasks.inner.dynamic

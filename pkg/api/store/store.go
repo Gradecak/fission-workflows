@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/fission/fission-workflows/pkg/fes"
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/util/labels"
-	"github.com/fission/fission-workflows/pkg/util/pubsub"
+	"github.com/gradecak/fission-workflows/pkg/fes"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/util/labels"
+	"github.com/gradecak/fission-workflows/pkg/util/pubsub"
 )
 
 type Workflows struct {

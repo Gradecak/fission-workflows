@@ -4,7 +4,7 @@
 
 # Basic settings
 name: workflows
-bundleImage: fission/fission-workflows-bundle
+bundleImage: gradecak/fission-workflows-bundle
 tag: 0.6.0
 pullPolicy: IfNotPresent
 debug: false

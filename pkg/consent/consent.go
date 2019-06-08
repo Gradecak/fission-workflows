@@ -1,7 +1,7 @@
 package consent
 
 import (
-	"github.com/fission/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types"
 )
 
 type ID = string

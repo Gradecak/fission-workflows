@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
-	"github.com/fission/fission-workflows/pkg/util"
 	"github.com/golang/protobuf/proto"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
+	"github.com/gradecak/fission-workflows/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 

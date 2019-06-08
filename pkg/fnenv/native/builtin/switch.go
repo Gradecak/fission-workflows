@@ -3,8 +3,8 @@ package builtin
 import (
 	"errors"
 
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
 	"github.com/sirupsen/logrus"
 )
 

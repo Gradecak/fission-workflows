@@ -16,9 +16,9 @@ import (
 	"net/url"
 	"reflect"
 
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
-	"github.com/fission/fission-workflows/pkg/util/mediatype"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
+	"github.com/gradecak/fission-workflows/pkg/util/mediatype"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )

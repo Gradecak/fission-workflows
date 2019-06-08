@@ -3,8 +3,8 @@ package cache
 import (
 	"testing"
 
-	"github.com/fission/fission-workflows/pkg/fes"
-	"github.com/fission/fission-workflows/pkg/fes/testutil"
+	"github.com/gradecak/fission-workflows/pkg/fes"
+	"github.com/gradecak/fission-workflows/pkg/fes/testutil"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -7,9 +7,9 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/fission/fission-workflows/pkg/fnenv/native/builtin"
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
+	"github.com/gradecak/fission-workflows/pkg/fnenv/native/builtin"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )

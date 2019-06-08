@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/fnenv/fission"
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
+	"github.com/gradecak/fission-workflows/pkg/fnenv/fission"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )

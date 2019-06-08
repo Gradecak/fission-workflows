@@ -1,8 +1,8 @@
 package controlflow
 
 import (
-	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/golang/protobuf/proto"
+	"github.com/gradecak/fission-workflows/pkg/types"
 )
 
 type FlowType string

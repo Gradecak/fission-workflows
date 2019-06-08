@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/fission/fission-workflows/pkg/fes"
 	"github.com/golang/protobuf/proto"
+	"github.com/gradecak/fission-workflows/pkg/fes"
 	"github.com/sirupsen/logrus"
 )
 

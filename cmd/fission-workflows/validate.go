@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fission/fission-workflows/pkg/parse/protobuf"
-	"github.com/fission/fission-workflows/pkg/parse/yaml"
-	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/gradecak/fission-workflows/pkg/parse/protobuf"
+	"github.com/gradecak/fission-workflows/pkg/parse/yaml"
+	"github.com/gradecak/fission-workflows/pkg/types"
 
-	"github.com/fission/fission-workflows/pkg/types/validate"
+	"github.com/gradecak/fission-workflows/pkg/types/validate"
 	"github.com/urfave/cli"
 )
 

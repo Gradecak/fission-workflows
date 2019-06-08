@@ -18,7 +18,7 @@ package scheduler
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import fission_workflows_types1 "github.com/fission/fission-workflows/pkg/types"
+import fission_workflows_types1 "github.com/gradecak/fission-workflows/pkg/types"
 import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
 
 import (

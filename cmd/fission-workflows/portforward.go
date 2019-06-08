@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/apiserver/httpclient"
+	"github.com/gradecak/fission-workflows/pkg/apiserver/httpclient"
 	"github.com/sirupsen/logrus"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

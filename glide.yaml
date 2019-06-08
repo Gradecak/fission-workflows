@@ -1,5 +1,5 @@
-package: github.com/fission/fission-workflows
-homepage: https://github.com/fission/fission-workflows
+package: github.com/gradecak/fission-workflows
+homepage: https://github.com/gradecak/fission-workflows
 license: Apache-2.0
 excludeDirs:
 - local

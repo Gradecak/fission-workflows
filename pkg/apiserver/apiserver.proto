@@ -3,9 +3,9 @@ syntax = "proto3";
 package fission.workflows.apiserver;
 option go_package = "apiserver";
 
-import "github.com/fission/fission-workflows/pkg/types/types.proto";
-import "github.com/fission/fission-workflows/pkg/version/version.proto";
-import "github.com/fission/fission-workflows/pkg/fes/fes.proto";
+import "github.com/gradecak/fission-workflows/pkg/types/types.proto";
+import "github.com/gradecak/fission-workflows/pkg/version/version.proto";
+import "github.com/gradecak/fission-workflows/pkg/fes/fes.proto";
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
 

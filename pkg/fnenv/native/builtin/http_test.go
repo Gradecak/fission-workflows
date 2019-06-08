@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
 	"github.com/stretchr/testify/assert"
 )
 

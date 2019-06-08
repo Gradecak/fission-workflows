@@ -2,7 +2,7 @@ package fnenv
 
 import (
 	"fmt"
-	"github.com/fission/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	//	"strings"

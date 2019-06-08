@@ -2,9 +2,9 @@ package apiserver
 
 import (
 	"errors"
-	"github.com/fission/fission-workflows/pkg/api"
-	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/gradecak/fission-workflows/pkg/api"
+	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )

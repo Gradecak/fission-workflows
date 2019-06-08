@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
-	"github.com/fission/fission-workflows/pkg/util"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
+	"github.com/gradecak/fission-workflows/pkg/util"
 	"github.com/robertkrimen/otto"
 	"github.com/sirupsen/logrus"
 

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/fission/fission-workflows/pkg/parse/protobuf"
-	"github.com/fission/fission-workflows/pkg/parse/yaml"
-	"github.com/fission/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/parse/protobuf"
+	"github.com/gradecak/fission-workflows/pkg/parse/yaml"
+	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/sirupsen/logrus"
 )
 

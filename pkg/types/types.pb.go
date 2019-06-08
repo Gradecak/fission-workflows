@@ -40,7 +40,7 @@ import fmt "fmt"
 import math "math"
 import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
 import google_protobuf1 "github.com/golang/protobuf/ptypes/duration"
-import fission_workflows_types "github.com/fission/fission-workflows/pkg/types/typedvalues"
+import fission_workflows_types "github.com/gradecak/fission-workflows/pkg/types/typedvalues"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

@@ -2,9 +2,9 @@ package consent
 
 //TODO client library for sending consent messages
 // import (
-// 	"github.com/fission/fission-workflows/pkg/consent"
-// 	"github.com/fission/fission-workflows/pkg/types"
-// 	"github.com/fission/fission-workflows/pkg/util"
+// 	"github.com/gradecak/fission-workflows/pkg/consent"
+// 	"github.com/gradecak/fission-workflows/pkg/types"
+// 	"github.com/gradecak/fission-workflows/pkg/util"
 // 	"github.com/golang/protobuf/proto"
 // 	"github.com/nats-io/go-nats"
 // 	stan "github.com/nats-io/go-nats-streaming"

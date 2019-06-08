@@ -3,8 +3,8 @@ package integration
 import (
 	"context"
 
-	"github.com/fission/fission-workflows/cmd/fission-workflows-bundle/bundle"
-	"github.com/fission/fission-workflows/pkg/scheduler"
+	"github.com/gradecak/fission-workflows/cmd/fission-workflows-bundle/bundle"
+	"github.com/gradecak/fission-workflows/pkg/scheduler"
 )
 
 // SetupBundle sets up and runs the workflows-bundle.

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/types/graph"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types/graph"
 	// "github.com/sirupsen/logrus"
 	"math/rand"
 )

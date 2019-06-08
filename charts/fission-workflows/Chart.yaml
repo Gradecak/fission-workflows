@@ -12,7 +12,7 @@ keywords:
 - function-as-a-service
 home: http://fission.io/
 sources:
-  - https://github.com/fission/fission-workflows
+  - https://github.com/gradecak/fission-workflows
 maintainers:
   - name: Erwin van Eyk
     email: erwin@platform9.com

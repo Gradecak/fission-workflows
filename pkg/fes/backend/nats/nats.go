@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/fes"
+	"github.com/gradecak/fission-workflows/pkg/fes"
 	"github.com/nats-io/go-nats-streaming"
 	"github.com/sirupsen/logrus"
 )

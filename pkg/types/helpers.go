@@ -3,9 +3,9 @@ package types
 import (
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
-	"github.com/fission/fission-workflows/pkg/util"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
+	"github.com/gradecak/fission-workflows/pkg/util"
 )
 
 func NewWorkflow(id string) *Workflow {

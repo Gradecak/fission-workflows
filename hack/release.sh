@@ -18,6 +18,6 @@ build/build-osx.sh
 
 # Deployments
 echo "Packaging chart..."
-helm package ${GOPATH}/src/github.com/fission/fission-workflows/charts/fission-workflows
+helm package ${GOPATH}/src/github.com/gradecak/fission-workflows/charts/fission-workflows
 
 echo "Done!"

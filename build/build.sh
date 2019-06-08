@@ -5,7 +5,7 @@ set -o errexit
 set -o pipefail
 
 # Constants
-versionPath="github.com/fission/fission-workflows/pkg/version"
+versionPath="github.com/gradecak/fission-workflows/pkg/version"
 
 # Handle arguments
 while [[ $# -gt 0 ]]; do
@@ -83,7 +83,7 @@ CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} go build\
   -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH}\
   -ldflags '-X "${versionPath}.buildDate=${date}"'\
   -o ${output_bundle}\
-  github.com/fission/fission-workflows/cmd/fission-workflows-bundle/
+  github.com/gradecak/fission-workflows/cmd/fission-workflows-bundle/
 echo "$(pwd)/${output_bundle}"
 
 # Build proxy
@@ -91,7 +91,7 @@ CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} go build\
   -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH}\
   -ldflags '-X "${versionPath}.buildDate=${date}"'\
   -o ${output_proxy}\
-  github.com/fission/fission-workflows/cmd/fission-workflows-proxy/
+  github.com/gradecak/fission-workflows/cmd/fission-workflows-proxy/
 echo "$(pwd)/${output_proxy}"
 
 # Build client
@@ -99,5 +99,5 @@ CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} go build \
   -gcflags=-trimpath=${GOPATH} -asmflags=-trimpath=${GOPATH}\
   -ldflags '-X "${versionPath}.buildDate=${date}"'\
   -o ${output_cli}\
-  github.com/fission/fission-workflows/cmd/fission-workflows/
+  github.com/gradecak/fission-workflows/cmd/fission-workflows/
 echo "$(pwd)/${output_cli}"

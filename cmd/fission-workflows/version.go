@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/blang/semver"
-	"github.com/fission/fission-workflows/pkg/version"
+	"github.com/gradecak/fission-workflows/pkg/version"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )

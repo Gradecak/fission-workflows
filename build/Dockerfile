@@ -3,7 +3,7 @@ ARG GOLANG_VERSION=1.12.0
 FROM golang:$GOLANG_VERSION AS builder
 ARG NOBUILD
 
-WORKDIR /go/src/github.com/fission/fission-workflows
+WORKDIR /go/src/github.com/gradecak/fission-workflows
 
 COPY . .
 
@@ -18,9 +18,9 @@ RUN if ! $NOBUILD ; then \
 # Bundle image
 FROM scratch
 
-COPY --from=builder /go/src/github.com/fission/fission-workflows/fission-workflows-bundle /fission-workflows-bundle
-COPY --from=builder /go/src/github.com/fission/fission-workflows/fission-workflows-proxy /fission-workflows-proxy
-COPY --from=builder /go/src/github.com/fission/fission-workflows/fission-workflows /fission-workflows
+COPY --from=builder /go/src/github.com/gradecak/fission-workflows/fission-workflows-bundle /fission-workflows-bundle
+COPY --from=builder /go/src/github.com/gradecak/fission-workflows/fission-workflows-proxy /fission-workflows-proxy
+COPY --from=builder /go/src/github.com/gradecak/fission-workflows/fission-workflows /fission-workflows
 
 # Sensible default: run fission-workflows with in-memory event store and all basic components
 # --api - serves the gRPC and HTTP interface at :5000 and :8080 respectively

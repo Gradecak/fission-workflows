@@ -9,8 +9,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/version"
 	"github.com/fission/fission/fission/plugin"
+	"github.com/gradecak/fission-workflows/pkg/version"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )

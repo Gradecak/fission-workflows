@@ -2,9 +2,9 @@ package types
 
 import (
 	"fmt"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
 	"github.com/sirupsen/logrus"
 	"regexp"
 	"strings"

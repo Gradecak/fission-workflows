@@ -20,9 +20,9 @@ package apiserver
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import fission_workflows_types1 "github.com/fission/fission-workflows/pkg/types"
-import fission_workflows_version "github.com/fission/fission-workflows/pkg/version"
-import fission_workflows_eventstore "github.com/fission/fission-workflows/pkg/fes"
+import fission_workflows_types1 "github.com/gradecak/fission-workflows/pkg/types"
+import fission_workflows_version "github.com/gradecak/fission-workflows/pkg/version"
+import fission_workflows_eventstore "github.com/gradecak/fission-workflows/pkg/fes"
 import google_protobuf3 "github.com/golang/protobuf/ptypes/empty"
 import _ "google.golang.org/genproto/googleapis/api/annotations"
 

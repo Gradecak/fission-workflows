@@ -4,8 +4,8 @@ package mem
 
 import (
 	//"error"
-	"github.com/fission/fission-workflows/pkg/consent"
-	"github.com/fission/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/consent"
+	"github.com/gradecak/fission-workflows/pkg/types"
 )
 
 // Simple in-memory store of string:ConsentStatus pairs

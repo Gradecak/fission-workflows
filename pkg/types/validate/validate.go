@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/types/graph"
-	"github.com/fission/fission-workflows/pkg/types/typedvalues/controlflow"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types/graph"
+	"github.com/gradecak/fission-workflows/pkg/types/typedvalues/controlflow"
 	"gonum.org/v1/gonum/graph/topo"
 )
 

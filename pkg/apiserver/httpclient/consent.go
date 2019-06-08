@@ -3,7 +3,7 @@ package httpclient
 import (
 	"context"
 	"fmt"
-	"github.com/fission/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/types"
 	"net/http"
 )
 

@@ -3,7 +3,7 @@ package fes
 import (
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/util/labels"
+	"github.com/gradecak/fission-workflows/pkg/util/labels"
 )
 
 const (

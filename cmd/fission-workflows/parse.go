@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fission/fission-workflows/pkg/parse"
-	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/gradecak/fission-workflows/pkg/parse"
+	"github.com/gradecak/fission-workflows/pkg/types"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )

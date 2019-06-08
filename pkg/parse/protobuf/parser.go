@@ -6,9 +6,9 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/fission/fission-workflows/pkg/types"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/gradecak/fission-workflows/pkg/types"
 )
 
 var DefaultParser = &Parser{}

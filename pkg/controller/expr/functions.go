@@ -3,8 +3,8 @@ package expr
 import (
 	"fmt"
 
-	"github.com/fission/fission-workflows/pkg/types"
-	"github.com/fission/fission-workflows/pkg/util"
+	"github.com/gradecak/fission-workflows/pkg/types"
+	"github.com/gradecak/fission-workflows/pkg/util"
 	"github.com/robertkrimen/otto"
 	"github.com/sirupsen/logrus"
 )

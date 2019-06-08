@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fission/fission-workflows/pkg/fes"
-	"github.com/fission/fission-workflows/pkg/util/workqueue"
+	"github.com/gradecak/fission-workflows/pkg/fes"
+	"github.com/gradecak/fission-workflows/pkg/util/workqueue"
 	log "github.com/sirupsen/logrus"
 )
 
