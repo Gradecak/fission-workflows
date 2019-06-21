@@ -65,6 +65,7 @@ func main() {
 			UseNats:              c.Bool("nats"),
 			ProvNats:             c.Bool("prov-nats"),
 			ConsentNats:          c.Bool("consent-nats"),
+			MaxParallel:          c.Int("max-parallel-invocations"),
 		})
 	}
 	cliApp.Run(os.Args)
@@ -204,6 +205,11 @@ func createCli() *cli.App {
 		cli.BoolFlag{
 			Name:  "controller",
 			Usage: "Run the controller with all components",
+		},
+		cli.IntFlag{
+			Name:  "max-parallel-invocations",
+			Usage: "Maximium number of parallel invocations to allow into the system",
+			Value: 1500,
 		},
 		cli.BoolFlag{
 			Name:  "workflow-controller",

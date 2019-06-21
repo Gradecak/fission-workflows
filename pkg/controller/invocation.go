@@ -20,12 +20,14 @@ import (
 	"github.com/gradecak/fission-workflows/pkg/types/typedvalues/controlflow"
 	"github.com/gradecak/fission-workflows/pkg/util"
 	"github.com/opentracing/opentracing-go"
+	// "github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	DefaultMaxRuntime       = 10 * time.Minute
-	awaitWorkflowMaxRuntime = 10 * time.Second
+	DefaultMaxRuntime         = 10 * time.Minute
+	awaitWorkflowMaxRuntime   = 10 * time.Second
+	InvocationControllerLabel = "invocation"
 )
 
 // InvocationController is the controller for ensuring the processing of a single workflow invocation.
@@ -105,6 +107,16 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 
 	// Check if the invocation is not in a terminal state
 	if invocation.GetStatus().Finished() {
+		// if provenance is enabled and invocation is a success
+		if c.provenanceAPI != nil && invocation.GetStatus().Successful() {
+			c.executor.Submit(&executor.Task{
+				TaskID:  invocation.ID() + ".prov",
+				GroupID: invocation.ID(),
+				Apply: func() error {
+					return c.provenanceAPI.GenerateProvenance(invocation)
+				},
+			})
+		}
 		return ctrl.Done{Msg: fmt.Sprintf("invocation is in a terminal state (%v)",
 			invocation.GetStatus().GetStatus().String())}
 	}
@@ -192,10 +204,6 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 			})
 			return ctrl.Err{Err: err}
 		} else {
-			// if provenance is enabled and invocation is a success
-			if c.provenanceAPI != nil {
-				c.provenanceAPI.GenerateProvenance(invocation)
-			}
 			c.executor.Submit(&executor.Task{
 				TaskID:  invocation.ID() + ".success",
 				GroupID: invocation.ID(),
@@ -203,6 +211,7 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 					return c.invocationAPI.Complete(invocation.ID(), output, outputHeaders)
 				},
 			})
+			// invocationDuration.Observe(float64(time.Now().Sub(c.startTime)))
 			return ctrl.Success{Msg: "all tasks of the invocation have completed"}
 		}
 	}
@@ -225,7 +234,6 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 		})
 		return ctrl.Err{Err: err}
 	}
-
 	// Prepare (prewarm) the tasks listed in the schedule.
 	for _, action := range schedule.GetPrepareTasks() {
 		c.executor.Submit(&executor.Task{
@@ -578,32 +586,36 @@ type InvocationMetaController struct {
 func NewInvocationMetaController(executor *executor.LocalExecutor, invocations *store.Invocations,
 	invocationAPI *api.Invocation, taskAPI *api.Task, scheduler *scheduler.InvocationScheduler, stateStore *expr.Store,
 	cachePollInterval time.Duration, consentAPI *api.Consent, provAPI *api.Provenance) *InvocationMetaController {
+
+	sys := ctrl.NewSystem(func(event *ctrl.Event) (ctrl ctrl.Controller, err error) {
+		spanCtx, err := fes.ExtractTracingFromEventMetadata(event.Event.GetMetadata())
+		if err != nil {
+			logrus.Debugf("Could not extract span from event metadata: %v", err)
+		}
+		var span opentracing.Span
+		if spanCtx != nil {
+			span = opentracing.StartSpan("/controller/eval", opentracing.FollowsFrom(spanCtx))
+		} else {
+			span = opentracing.StartSpan("/controller/eval")
+		}
+		invocationID := event.Aggregate.Id
+		if len(invocationID) == 0 {
+			return nil, fmt.Errorf("invocation ID missing in event: %v %v", event.Aggregate, event.Event.GetType())
+		}
+		return NewInvocationController(invocationID, executor, invocationAPI, taskAPI, scheduler,
+			stateStore, span, logrus.WithField("key", invocationID), consentAPI, provAPI), nil
+	})
+	sys.ControllerType = "invocation"
+
 	c := &InvocationMetaController{
 		executor:    executor,
 		runOnce:     &sync.Once{},
 		invocations: invocations,
-		system: ctrl.NewSystem(func(event *ctrl.Event) (ctrl ctrl.Controller, err error) {
-			spanCtx, err := fes.ExtractTracingFromEventMetadata(event.Event.GetMetadata())
-			if err != nil {
-				logrus.Debugf("Could not extract span from event metadata: %v", err)
-			}
-			var span opentracing.Span
-			if spanCtx != nil {
-				span = opentracing.StartSpan("/controller/eval", opentracing.FollowsFrom(spanCtx))
-			} else {
-				span = opentracing.StartSpan("/controller/eval")
-			}
-			invocationID := event.Aggregate.Id
-			if len(invocationID) == 0 {
-				return nil, fmt.Errorf("invocation ID missing in event: %v %v", event.Aggregate, event.Event.GetType())
-			}
-			return NewInvocationController(invocationID, executor, invocationAPI, taskAPI, scheduler,
-				stateStore, span, logrus.WithField("key", invocationID), consentAPI, provAPI), nil
-		}),
+		system:      sys,
 	}
 	c.sensors = []ctrl.Sensor{
 		NewInvocationNotificationSensor(invocations),
-		NewInvocationStorePollSensor(invocations, cachePollInterval),
+		NewInvocationStorePollSensor(invocations, cachePollInterval, invocationAPI),
 		NewStalenessPollSensor(c.system, func(ctrlKey string) (fes.Aggregate, fes.Entity, error) {
 			aggregate := fes.Aggregate{
 				Type: types.TypeInvocation,
@@ -673,7 +685,7 @@ func (s *InvocationNotificationSensor) Start(evalQueue ctrl.EvalQueue) error {
 }
 
 func (s *InvocationNotificationSensor) Run(evalQueue ctrl.EvalQueue) {
-	sub := s.invocations.GetInvocationUpdates()
+	sub := s.invocations.GetRunningInvocationUpdates()
 	if sub == nil {
 		logrus.Warn("Workflow store does not support pubsub.")
 		return
@@ -707,12 +719,14 @@ func (s *InvocationNotificationSensor) Close() error {
 type InvocationStorePollSensor struct {
 	*ctrl.PollSensor
 	invocations *store.Invocations
+	api         *api.Invocation
 	system      *ctrl.System
 }
 
-func NewInvocationStorePollSensor(invocations *store.Invocations, interval time.Duration) *InvocationStorePollSensor {
+func NewInvocationStorePollSensor(invocations *store.Invocations, interval time.Duration, api *api.Invocation) *InvocationStorePollSensor {
 	s := &InvocationStorePollSensor{
 		invocations: invocations,
+		api:         api,
 	}
 	s.PollSensor = ctrl.NewPollSensor(interval, s.Poll)
 	return s
@@ -739,18 +753,13 @@ func (s *InvocationStorePollSensor) Poll(evalQueue ctrl.EvalQueue) {
 			logrus.Warnf("Could not retrieve entity from invocations store: %v", aggregate)
 			continue
 		}
-
-		// Check if the status is not in a terminal state
-		switch wf.GetStatus().GetStatus() {
-		case types.WorkflowInvocationStatus_ABORTED, types.WorkflowInvocationStatus_FAILED, types.WorkflowInvocationStatus_SUCCEEDED:
+		// ignore invocations that are queued and not active
+		if wf.GetStatus().Queued() {
 			continue
-		default:
-			// nop
 		}
-
-		// Submit evaluation for the workflow invocation
-		// The workqueue within in the control system ensures that invocations that are already queued for execution
-		// will be ignored.
+		// Submit evaluation for the workflow invocation The workqueue
+		// within in the control system ensures that invocations that
+		// are already queued for execution will be ignored.
 		evalQueue.Submit(&ctrl.Event{
 			Old:     wf,
 			Updated: wf,
@@ -804,7 +813,7 @@ func (s *StalenessPollSensor) Poll(queue ctrl.EvalQueue) {
 		invocation, ok := entity.(*types.WorkflowInvocation)
 		if ok {
 			switch invocation.GetStatus().GetStatus() {
-			case types.WorkflowInvocationStatus_ABORTED, types.WorkflowInvocationStatus_FAILED, types.WorkflowInvocationStatus_SUCCEEDED:
+			case types.WorkflowInvocationStatus_ABORTED, types.WorkflowInvocationStatus_FAILED, types.WorkflowInvocationStatus_SUCCEEDED, types.WorkflowInvocationStatus_SCHEDULED:
 				return true
 			default:
 				// nop

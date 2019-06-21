@@ -4,12 +4,26 @@ package store
 import (
 	"errors"
 	"fmt"
-
+	"github.com/gradecak/fission-workflows/pkg/api/events"
 	"github.com/gradecak/fission-workflows/pkg/fes"
 	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/gradecak/fission-workflows/pkg/util/labels"
 	"github.com/gradecak/fission-workflows/pkg/util/pubsub"
+	"github.com/prometheus/client_golang/prometheus"
+	"sort"
 )
+
+var (
+	storeNumQueued = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "store",
+		Name:      "queued_invocations",
+		Help:      "Duration of an invocation from start to a finished state.",
+	}, []string{"type"})
+)
+
+func init() {
+	prometheus.MustRegister(storeNumQueued)
+}
 
 type Workflows struct {
 	fes.CacheReader // Currently needed for pubsub publisher interface, should be exposed here
@@ -103,8 +117,8 @@ func (s *Invocations) GetInvocation(invocationID string) (*types.WorkflowInvocat
 //
 // Future: Currently this assumes the presence of a pubsub.Publisher interface in the cache.
 // In the future we can fallback to pull-based mechanisms
-func (s *Invocations) GetInvocationUpdates() *InvocationSubscription {
-	selector := labels.In(fes.PubSubLabelAggregateType, types.TypeInvocation, types.TypeTaskRun)
+
+func (s *Invocations) getSubscription(m labels.Matcher) *InvocationSubscription {
 	invocationPub, ok := s.CacheReader.(pubsub.Publisher)
 	if !ok {
 		return nil
@@ -113,13 +127,51 @@ func (s *Invocations) GetInvocationUpdates() *InvocationSubscription {
 	sub := &InvocationSubscription{
 		Subscription: invocationPub.Subscribe(pubsub.SubscriptionOptions{
 			Buffer:       fes.DefaultNotificationBuffer,
-			LabelMatcher: selector,
+			LabelMatcher: m,
 		}),
 	}
 	sub.closeFn = func() error {
 		return invocationPub.Unsubscribe(sub.Subscription)
 	}
 	return sub
+}
+
+func (s *Invocations) GetRunningInvocationUpdates() *InvocationSubscription {
+	// selector := labels.In(fes.PubSubLabelAggregateType, types.TypeInvocation, types.TypeTaskRun)
+	selector := labels.Or(
+		labels.In(fes.PubSubLabelEventType,
+			events.EventInvocationScheduled,
+			events.EventInvocationCompleted,
+			events.EventInvocationCanceled,
+			events.EventInvocationTaskAdded,
+			events.EventInvocationFailed,
+		),
+		labels.In(fes.PubSubLabelAggregateType, types.TypeTaskRun),
+	)
+	return s.getSubscription(selector)
+
+}
+
+func (s *Invocations) GetQueuedInvocationUpdates() *InvocationSubscription {
+	selector := labels.In(fes.PubSubLabelEventType, events.EventInvocationCreated)
+	return s.getSubscription(selector)
+}
+
+func (s *Invocations) GetOldestQueued() []*types.WorkflowInvocation {
+	wfi := []*types.WorkflowInvocation{}
+	for _, aggregate := range s.List() {
+		w, err := s.GetInvocation(aggregate.GetId())
+		if err != nil {
+			continue
+		}
+		// only get the invocations that are scheduled
+		if w.GetStatus().GetStatus() == types.WorkflowInvocationStatus_SCHEDULED {
+			wfi = append(wfi, w)
+		}
+	}
+	defer storeNumQueued.WithLabelValues("invocations").Set(float64(len(wfi)))
+	sort.Sort(types.ByQueueTime{wfi})
+	return wfi
 }
 
 type WorkflowSubscription struct {

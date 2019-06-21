@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	EventRefresh = "refresh"
-	parseTask    = "task"
+	EventRefresh           = "refresh"
+	parseTask              = "task"
+	WorkflowControllerType = "workflow"
 )
 
 // WorkflowController is the controller for ensuring the processing of a single workflow.
@@ -102,6 +103,10 @@ type WorkflowMetaController struct {
 func NewWorkflowMetaController(api *api.Workflow, workflows *store.Workflows, executor *executor.LocalExecutor,
 	storePollInterval time.Duration) *WorkflowMetaController {
 
+	sys := ctrl.NewSystem(func(event *ctrl.Event) (ctrl ctrl.Controller, err error) {
+		return NewWorkflowController(api, executor, event.Aggregate.Id), nil
+	})
+	sys.ControllerType = WorkflowControllerType
 	return &WorkflowMetaController{
 		api:       api,
 		executor:  executor,
@@ -111,9 +116,7 @@ func NewWorkflowMetaController(api *api.Workflow, workflows *store.Workflows, ex
 			NewWorkflowNotificationSensor(workflows),
 			NewWorkflowStorePollSensor(workflows, storePollInterval),
 		},
-		system: ctrl.NewSystem(func(event *ctrl.Event) (ctrl ctrl.Controller, err error) {
-			return NewWorkflowController(api, executor, event.Aggregate.Id), nil
-		}),
+		system: sys,
 	}
 }
 

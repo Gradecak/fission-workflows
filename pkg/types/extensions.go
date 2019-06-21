@@ -19,8 +19,6 @@ const (
 	InputQuery   = "query"
 	InputMethod  = "method"
 	InputParent  = "_parent"
-	//Dataflow consent input
-	InputConsent = "_consent"
 
 	typedValueShortMaxLen = 32
 	WorkflowAPIVersion    = "v1"
@@ -144,6 +142,19 @@ func (m *WorkflowInvocation) HasConsentId() bool {
 	return len(m.GetSpec().GetConsentId()) > 0
 }
 
+type WorkflowInvocations []*WorkflowInvocation
+
+func (s WorkflowInvocations) Len() int      { return len(s) }
+func (s WorkflowInvocations) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+type ByQueueTime struct{ WorkflowInvocations }
+
+func (s ByQueueTime) Less(i, j int) bool {
+	x, _ := ptypes.Timestamp(s.WorkflowInvocations[i].GetMetadata().GetCreatedAt())
+	y, _ := ptypes.Timestamp(s.WorkflowInvocations[j].GetMetadata().GetCreatedAt())
+	return y.After(x)
+}
+
 //
 // WorkflowInvocationStatus
 //
@@ -179,6 +190,13 @@ func (m WorkflowInvocationStatus) Finished() bool {
 
 func (m WorkflowInvocationStatus) Successful() bool {
 	return m.GetStatus() == WorkflowInvocationStatus_SUCCEEDED
+}
+
+func (m WorkflowInvocationStatus) Running() bool {
+	return m.GetStatus() == WorkflowInvocationStatus_IN_PROGRESS
+}
+func (m WorkflowInvocationStatus) Queued() bool {
+	return m.GetStatus() == WorkflowInvocationStatus_SCHEDULED
 }
 
 func (m WorkflowInvocationStatus) LastUpdated() (time.Time, error) {

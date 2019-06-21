@@ -6,6 +6,7 @@ import (
 
 	"github.com/gradecak/fission-workflows/pkg/api/events"
 	"github.com/gradecak/fission-workflows/pkg/api/projectors"
+	"github.com/gradecak/fission-workflows/pkg/controller/monitor"
 	"github.com/gradecak/fission-workflows/pkg/fes"
 	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
@@ -17,15 +18,24 @@ import (
 
 const ErrInvocationCanceled = "workflow invocation was canceled"
 
+var (
+	DefaultInvocationMonitor = monitor.NewInvocationMonitor()
+)
+
 // Invocation contains the API functionality for controlling (workflow) invocations.
 // This includes starting, stopping, and completing invocations.
 type Invocation struct {
-	es fes.Backend
+	es      fes.Backend
+	monitor *monitor.InvocationMonitor
 }
 
 // NewInvocationAPI creates the Invocation API.
-func NewInvocationAPI(esClient fes.Backend) *Invocation {
-	return &Invocation{esClient}
+func NewInvocationAPI(esClient fes.Backend, monitor *monitor.InvocationMonitor) *Invocation {
+	return &Invocation{esClient, monitor}
+}
+
+func (ia *Invocation) GetMonitor() *monitor.InvocationMonitor {
+	return ia.monitor
 }
 
 // Invoke triggers the start of the invocation using the provided specification.
@@ -47,6 +57,7 @@ func (ia *Invocation) Invoke(spec *types.WorkflowInvocationSpec, opts ...CallOpt
 	}
 
 	invocationID := fmt.Sprintf("wi-%s", util.UID())
+	ia.monitor.AddQueued(invocationID)
 
 	event, err := fes.NewEvent(projectors.NewInvocationAggregate(invocationID),
 		&events.InvocationCreated{
@@ -74,10 +85,29 @@ func (ia *Invocation) Invoke(spec *types.WorkflowInvocationSpec, opts ...CallOpt
 	return invocationID, nil
 }
 
+func (ia *Invocation) Schedule(invocationID string) error {
+	defer ia.monitor.RunQueued(invocationID)
+	if len(invocationID) == 0 {
+		return validate.NewError("invocationID", errors.New("id should not be empty"))
+	}
+	event, err := fes.NewEvent(projectors.NewInvocationAggregate(invocationID),
+		&events.InvocationScheduled{})
+	if err != nil {
+		return err
+	}
+	event.Hints = &fes.EventHints{Completed: true}
+	err = ia.es.Append(event)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Cancel halts an invocation. This does not guarantee that tasks currently running are halted,
 // but beyond the invocation will not progress any further than those tasks. The state of the invocation will
 // become ABORTED. If the API fails to append the event to the event store, it will return an error.
 func (ia *Invocation) Cancel(invocationID string) error {
+	defer ia.monitor.Remove(invocationID)
 	if len(invocationID) == 0 {
 		return validate.NewError("invocationID", errors.New("id should not be empty"))
 	}
@@ -103,6 +133,7 @@ func (ia *Invocation) Cancel(invocationID string) error {
 // to ensure that a workflow invocation turns into the COMPLETED state.
 // If the API fails to append the event to the event store, it will return an error.
 func (ia *Invocation) Complete(invocationID string, output *typedvalues.TypedValue, outputHeaders *typedvalues.TypedValue) error {
+	defer ia.monitor.Remove(invocationID)
 	if len(invocationID) == 0 {
 		return validate.NewError("invocationID", errors.New("id should not be empty"))
 	}
@@ -123,6 +154,7 @@ func (ia *Invocation) Complete(invocationID string, output *typedvalues.TypedVal
 // Optionally you can provide a custom error message to indicate the specific reason for the FAILED state.
 // If the API fails to append the event to the event store, it will return an error.
 func (ia *Invocation) Fail(invocationID string, errMsg error) error {
+	defer ia.monitor.Remove(invocationID)
 	if len(invocationID) == 0 {
 		return validate.NewError("invocationID", errors.New("id should not be empty"))
 	}

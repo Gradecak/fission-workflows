@@ -16,6 +16,7 @@ const (
 	EventWorkflowParsed        EventType = "WorkflowParsed"
 	EventWorkflowParsingFailed EventType = "WorkflowParsingFailed"
 	EventInvocationCreated     EventType = "InvocationCreated"
+	EventInvocationScheduled   EventType = "InvocationScheduled"
 	EventInvocationCompleted   EventType = "InvocationCompleted"
 	EventInvocationCanceled    EventType = "InvocationCanceled"
 	EventInvocationTaskAdded   EventType = "InvocationTaskAdded"
@@ -44,6 +45,10 @@ func (m *WorkflowParsingFailed) Type() EventType {
 
 func (m *InvocationCreated) Type() EventType {
 	return EventInvocationCreated
+}
+
+func (m *InvocationScheduled) Type() EventType {
+	return EventInvocationScheduled
 }
 
 func (m *InvocationCompleted) Type() EventType {

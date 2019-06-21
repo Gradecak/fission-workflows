@@ -63,10 +63,12 @@ func (i *WorkflowInvocation) project(wi *types.WorkflowInvocation, event *fes.Ev
 		}
 		wi.Spec = m.GetSpec()
 		wi.Status = &types.WorkflowInvocationStatus{
-			Status:       types.WorkflowInvocationStatus_IN_PROGRESS,
+			Status:       types.WorkflowInvocationStatus_SCHEDULED,
 			Tasks:        map[string]*types.TaskInvocation{},
 			DynamicTasks: map[string]*types.Task{},
 		}
+	case *events.InvocationScheduled:
+		wi.Status.Status = types.WorkflowInvocationStatus_IN_PROGRESS
 	case *events.InvocationCanceled:
 		wi.Status.Status = types.WorkflowInvocationStatus_ABORTED
 		wi.Status.Error = m.GetError()

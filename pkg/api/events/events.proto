@@ -33,6 +33,10 @@ message InvocationCreated {
     fission.workflows.types.WorkflowInvocationSpec spec = 1;
 }
 
+message InvocationScheduled {
+    fission.workflows.types.WorkflowInvocationSpec spec = 1;
+}
+
 message InvocationCompleted {
     fission.workflows.types.TypedValue output = 1;
     fission.workflows.types.TypedValue OutputHeaders = 2;

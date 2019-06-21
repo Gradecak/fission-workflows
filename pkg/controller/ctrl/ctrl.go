@@ -9,8 +9,42 @@ import (
 
 	"github.com/gradecak/fission-workflows/pkg/fes"
 	"github.com/gradecak/fission-workflows/pkg/util/workqueue"
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 )
+
+var (
+	controllerExecTime = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+		Namespace: "system",
+		Subsystem: "controller",
+		Name:      "exec_duration",
+		Help:      "Duration of an invocation from start to a finished state.",
+		Objectives: map[float64]float64{
+			0:    0.0001,
+			0.01: 0.0001,
+			0.1:  0.0001,
+			0.25: 0.0001,
+			0.5:  0.0001,
+			0.75: 0.0001,
+			0.9:  0.0001,
+			1:    0.0001,
+		},
+	}, []string{"system"})
+	controllerConcurrentCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "system",
+		Subsystem: "controller",
+		Name:      "concurrent",
+		Help:      "Number of active controllers",
+	}, []string{"system"})
+)
+
+const (
+	MAX_PARALLEL_CONTROLLERS = 1500
+)
+
+func init() {
+	prometheus.MustRegister(controllerExecTime, controllerConcurrentCount)
+}
 
 // Future: decouple from fes.
 type Event = fes.Notification
@@ -79,11 +113,17 @@ func (r Done) Apply(s *System, event *Event) {
 type ControllerStats struct {
 	LastEvaluatedAt time.Time
 	EvalCount       int64
+	StartTime       time.Time
 }
 
 func (c ControllerStats) RecordEval() ControllerStats {
 	c.LastEvaluatedAt = time.Now()
 	c.EvalCount++
+	return c
+}
+
+func (c ControllerStats) InitStartTime() ControllerStats {
+	c.StartTime = time.Now()
 	return c
 }
 
@@ -98,6 +138,9 @@ type System struct {
 	close       func()
 	runOnce     *sync.Once
 	logger      *log.Logger
+	// controller spawn rate limiting
+	//prometheus info
+	ControllerType string
 }
 
 func NewSystem(factory ControllerFactory) *System {
@@ -114,6 +157,10 @@ func NewSystem(factory ControllerFactory) *System {
 }
 
 func (s *System) DeleteController(key string) {
+	defer func() {
+		controllerExecTime.WithLabelValues(s.ControllerType).Observe(float64(time.Since(s.ctrlStats[key].StartTime)))
+		controllerConcurrentCount.WithLabelValues(s.ControllerType).Dec()
+	}()
 	s.ctrlsMu.Lock()
 	delete(s.ctrls, key)
 	s.ctrlsMu.Unlock()
@@ -183,6 +230,7 @@ func (s *System) run() {
 		if !ok {
 			var err error
 			ctrl, err = s.factory(event)
+			controllerConcurrentCount.WithLabelValues(s.ControllerType).Inc()
 			if err != nil {
 				s.LoggerFor(ctrlKey).Error(err)
 				s.evalQueue.Done(item)
@@ -190,6 +238,12 @@ func (s *System) run() {
 			}
 			s.LoggerFor(ctrlKey).Debug("created new controller")
 			s.AddController(ctrlKey, ctrl)
+
+			// update number of open controller slots
+			// note controller start time
+			s.ctrlStatsMu.Lock()
+			s.ctrlStats[ctrlKey] = s.ctrlStats[ctrlKey].InitStartTime()
+			s.ctrlStatsMu.Unlock()
 		}
 
 		s.eval(ctx, ctrlKey, ctrl, event)

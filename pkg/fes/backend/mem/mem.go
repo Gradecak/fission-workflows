@@ -40,10 +40,16 @@ var (
 		Name:      "events",
 		Help:      "Number of events in the store by entity type.",
 	}, []string{"type"})
+	eventsDropped = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "fes",
+		Subsystem: "mem",
+		Name:      "dropped",
+		Help:      "Number of events in the store by entity type.",
+	})
 )
 
 func init() {
-	prometheus.MustRegister(cacheKeys, cacheEvents)
+	prometheus.MustRegister(cacheKeys, cacheEvents, eventsDropped)
 }
 
 // Config contains the user-configurable options of the in-memory backend.
@@ -122,6 +128,7 @@ func (b *Backend) Append(event *fes.Event) error {
 
 		// Verify that there is space for the new event
 		if !b.fitBuffer() {
+			defer eventsDropped.Inc()
 			return fes.ErrEventStoreOverflow.WithAggregate(&key)
 		}
 	}

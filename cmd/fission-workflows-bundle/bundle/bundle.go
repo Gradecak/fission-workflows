@@ -20,6 +20,7 @@ import (
 	"github.com/gradecak/fission-workflows/pkg/controller"
 	"github.com/gradecak/fission-workflows/pkg/controller/executor"
 	"github.com/gradecak/fission-workflows/pkg/controller/expr"
+	"github.com/gradecak/fission-workflows/pkg/controller/monitor"
 	"github.com/gradecak/fission-workflows/pkg/fes"
 	"github.com/gradecak/fission-workflows/pkg/fes/backend/mem"
 	"github.com/gradecak/fission-workflows/pkg/fes/backend/nats"
@@ -61,9 +62,13 @@ const (
 	executorMaxParallelism       = 1000
 	executorMaxTaskQueueSize     = 100000
 	workflowStorePollInterval    = time.Minute
-	invocationStorePollInterval  = time.Second
+	invocationStorePollInterval  = time.Second * 5
 	workflowSubscriptionBuffer   = 50
 	invocationSubscriptionBuffer = 1000
+)
+
+var (
+	invocationMonitor = monitor.NewInvocationMonitor()
 )
 
 type App struct {
@@ -120,6 +125,7 @@ type Options struct {
 	UseNats              bool
 	ProvNats             bool
 	ConsentNats          bool
+	MaxParallel          int
 }
 
 type FissionOptions struct {
@@ -224,7 +230,7 @@ func Run(ctx context.Context, opts *Options) error {
 	//
 	// Function Runtimes
 	//
-	invocationAPI := api.NewInvocationAPI(es)
+	invocationAPI := api.NewInvocationAPI(es, invocationMonitor)
 	resolvers := map[string]fnenv.RuntimeResolver{}
 	runtimes := map[string]fnenv.Runtime{}
 	reflectiveRuntime := workflows.NewRuntime(invocationAPI, invocationStore, workflowStore)
@@ -293,7 +299,9 @@ func Run(ctx context.Context, opts *Options) error {
 			extensions.consent.WatchConsent()
 		}
 		invocationCtrl := setupInvocationController(invocationStore, es, runtimes, resolvers, sched, extensions)
+		admissionCtrl := setupAdmissionController(invocationStore, es, opts.MaxParallel)
 		go invocationCtrl.Run()
+		go admissionCtrl.Run()
 		defer func() {
 			if err := invocationCtrl.Close(); err != nil {
 				log.Errorf("Failed to stop invocation controller: %v", err)
@@ -517,7 +525,7 @@ func serveWorkflowAPI(s *grpc.Server, es fes.Backend, resolvers map[string]fnenv
 }
 
 func serveInvocationAPI(s *grpc.Server, es fes.Backend, invocations *store.Invocations, workflows *store.Workflows) {
-	invocationAPI := api.NewInvocationAPI(es)
+	invocationAPI := api.NewInvocationAPI(es, invocationMonitor)
 	invocationServer := apiserver.NewInvocation(invocationAPI, invocations, workflows, es)
 	apiserver.RegisterWorkflowInvocationAPIServer(s, invocationServer)
 	log.Infof("Serving workflow invocation gRPC API at %s.", gRPCAddress)
@@ -575,13 +583,17 @@ func setupInvocationController(invocations *store.Invocations, es fes.Backend,
 	s *scheduler.InvocationScheduler, ext *DataflowApiExtensions) *controller.InvocationMetaController {
 
 	workflowAPI := api.NewWorkflowAPI(es, fnenv.NewMetaResolver(fnResolvers))
-	invocationAPI := api.NewInvocationAPI(es)
+	invocationAPI := api.NewInvocationAPI(es, invocationMonitor)
 	dynamicAPI := api.NewDynamicApi(workflowAPI, invocationAPI)
 	taskAPI := api.NewTaskAPI(fnRuntimes, es, dynamicAPI)
 	stateStore := expr.NewStore()
 	localExec := executor.NewLocalExecutor(executorMaxParallelism, executorMaxTaskQueueSize)
 	return controller.NewInvocationMetaController(localExec, invocations, invocationAPI, taskAPI, s,
 		stateStore, invocationStorePollInterval, ext.consent, ext.provenance)
+}
+
+func setupAdmissionController(invocations *store.Invocations, es fes.Backend, maxParallel int) *controller.AdmissionController {
+	return controller.NewAdmissionController(invocations, api.NewInvocationAPI(es, invocationMonitor), maxParallel)
 }
 
 func setupConsentMemAPI() *api.Consent {
