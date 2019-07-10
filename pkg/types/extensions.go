@@ -199,6 +199,10 @@ func (m WorkflowInvocationStatus) Queued() bool {
 	return m.GetStatus() == WorkflowInvocationStatus_SCHEDULED
 }
 
+func (m WorkflowInvocationStatus) Evictable() bool {
+	return m.GetStatus() == WorkflowInvocationStatus_EVICTABLE
+}
+
 func (m WorkflowInvocationStatus) LastUpdated() (time.Time, error) {
 	return ptypes.Timestamp(m.GetUpdatedAt())
 }

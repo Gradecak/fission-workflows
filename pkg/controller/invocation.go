@@ -107,16 +107,13 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 
 	// Check if the invocation is not in a terminal state
 	if invocation.GetStatus().Finished() {
-		// if provenance is enabled and invocation is a success
-		if c.provenanceAPI != nil && invocation.GetStatus().Successful() {
-			c.executor.Submit(&executor.Task{
-				TaskID:  invocation.ID() + ".prov",
-				GroupID: invocation.ID(),
-				Apply: func() error {
-					return c.provenanceAPI.GenerateProvenance(invocation)
-				},
-			})
-		}
+		// c.executor.Submit(&executor.Task{
+		// 	TaskID:  invocation.ID() + ".evict",
+		// 	GroupID: invocation.ID(),
+		// 	Apply: func() error {
+		// c.invocationAPI.Evict(invocation.ID())
+		// 	},
+		// })
 		return ctrl.Done{Msg: fmt.Sprintf("invocation is in a terminal state (%v)",
 			invocation.GetStatus().GetStatus().String())}
 	}
@@ -211,6 +208,10 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 					return c.invocationAPI.Complete(invocation.ID(), output, outputHeaders)
 				},
 			})
+			// if provenance is enabled and invocation is a success
+			if c.provenanceAPI != nil {
+				c.provenanceAPI.GenerateProvenance(invocation)
+			}
 			// invocationDuration.Observe(float64(time.Now().Sub(c.startTime)))
 			return ctrl.Success{Msg: "all tasks of the invocation have completed"}
 		}
@@ -755,6 +756,16 @@ func (s *InvocationStorePollSensor) Poll(evalQueue ctrl.EvalQueue) {
 		}
 		// ignore invocations that are queued and not active
 		if wf.GetStatus().Queued() {
+			continue
+		}
+
+		if wf.GetStatus().Evictable() {
+			// if refresher, ok := s.invocations.CacheReader.(fes.CacheWriter); ok {
+			// 	logrus.Info("Invalidating")
+			// 	refresher.Invalidate(aggregate)
+			// } else {
+			// 	logrus.Warnf("Cache does not support invalidating (key: %v)", aggregate.Format())
+			// }
 			continue
 		}
 		// Submit evaluation for the workflow invocation The workqueue

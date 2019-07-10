@@ -54,6 +54,10 @@ message InvocationFailed {
     fission.workflows.types.Error error = 1;
 }
 
+message InvocationEvictable {
+
+}
+
 //
 // Task
 //

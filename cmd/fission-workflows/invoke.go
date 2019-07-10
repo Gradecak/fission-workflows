@@ -60,6 +60,10 @@ var cmdInvoke = cli.Command{
 			Name:  "taskZones",
 			Usage: "Sets the zone hints the scheduler should use when executing a task. Expects a JSON object of {taskName:Zone}",
 		},
+		cli.StringFlag{
+			Name:  "consentId",
+			Usage: "Sets the consent Identifier associate with the workflow execution",
+		},
 		cli.DurationFlag{
 			Name:  "poll",
 			Value: 10 * time.Millisecond,
@@ -104,7 +108,6 @@ var cmdInvoke = cli.Command{
 			}
 			zones = types.ParseZoneHints(inpt)
 		}
-		logrus.Infof("ZONES: %+v", zones)
 
 		client := getClient(ctx)
 		// spec := &types.WorkflowInvocationSpec{
@@ -115,6 +118,9 @@ var cmdInvoke = cli.Command{
 		spec := types.NewWorkflowInvocationSpec(workflowID, time.Now().Add(timeout))
 		spec.Inputs = inputs
 		spec.ConsentId = "test"
+		if cId := ctx.String("consentId"); cId != "" {
+			spec.ConsentId = cId
+		}
 		spec.TaskHints = zones
 		md, err := client.Invocation.Invoke(ctx, spec)
 		if err != nil {

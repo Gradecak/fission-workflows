@@ -150,6 +150,16 @@ func (ia *Invocation) Complete(invocationID string, output *typedvalues.TypedVal
 	return ia.es.Append(event)
 }
 
+func (ia *Invocation) Evict(invocationID string) error {
+	event, err := fes.NewEvent(projectors.NewInvocationAggregate(invocationID),
+		&events.InvocationEvictable{})
+	if err != nil {
+		return err
+	}
+	event.Hints = &fes.EventHints{Completed: true}
+	return ia.es.Append(event)
+}
+
 // Fail changes the state of the invocation to FAILED.
 // Optionally you can provide a custom error message to indicate the specific reason for the FAILED state.
 // If the API fails to append the event to the event store, it will return an error.

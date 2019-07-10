@@ -85,6 +85,8 @@ func (i *WorkflowInvocation) project(wi *types.WorkflowInvocation, event *fes.Ev
 	case *events.InvocationFailed:
 		wi.Status.Error = m.GetError()
 		wi.Status.Status = types.WorkflowInvocationStatus_FAILED
+	case *events.InvocationEvictable:
+		wi.Status.Status = types.WorkflowInvocationStatus_EVICTABLE
 	default:
 		//key := wi.Aggregate()
 		return fes.ErrUnsupportedEntityEvent.WithEvent(event)

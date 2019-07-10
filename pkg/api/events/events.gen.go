@@ -21,6 +21,7 @@ const (
 	EventInvocationCanceled    EventType = "InvocationCanceled"
 	EventInvocationTaskAdded   EventType = "InvocationTaskAdded"
 	EventInvocationFailed      EventType = "InvocationFailed"
+	EventInvocationEvictable   EventType = "InvocationEvictable"
 	EventTaskStarted           EventType = "TaskStarted"
 	EventTaskSucceeded         EventType = "TaskSucceeded"
 	EventTaskSkipped           EventType = "TaskSkipped"
@@ -65,6 +66,10 @@ func (m *InvocationTaskAdded) Type() EventType {
 
 func (m *InvocationFailed) Type() EventType {
 	return EventInvocationFailed
+}
+
+func (m *InvocationEvictable) Type() EventType {
+	return EventInvocationEvictable
 }
 
 func (m *TaskStarted) Type() EventType {

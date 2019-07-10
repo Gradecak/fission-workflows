@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
-
 	"github.com/gradecak/fission-workflows/pkg/fnenv/native/builtin"
 	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/gradecak/fission-workflows/pkg/types/typedvalues"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
+	"io"
+	"io/ioutil"
 )
 
 const (
@@ -136,12 +135,16 @@ func parseProvenanceMeta(meta *provenanceMeta) (*types.ProvenanceMetadata, error
 		"control":   3,
 	}
 	logrus.Infof("META: %+v\n", meta.Meta)
-	if meta.Meta != "" && !json.Valid([]byte(meta.Meta)) {
-		return nil, errors.New("Provenance Meta is not valid json")
-	}
+	// if meta.Meta != "" && !json.Valid(meta.Meta) {
+	// 	return nil, errors.New("Provenance Meta is not valid json")
+	// }
 
 	m.OpType = types.ProvenanceMetadata_OpType(taskTypes[meta.OpType])
-	m.Meta = meta.Meta
+	out, err := yaml.Marshal(meta.Meta)
+	if err != nil {
+		return nil, err
+	}
+	m.Meta = string(out)
 	return m, nil
 }
 
@@ -333,6 +336,6 @@ type dataflowSpec struct {
 }
 
 type provenanceMeta struct {
-	Meta   string `yaml:"meta"`
-	OpType string `yaml:"opType"`
+	Meta   map[string]interface{} `yaml:"meta"`
+	OpType string                 `yaml:"opType"`
 }

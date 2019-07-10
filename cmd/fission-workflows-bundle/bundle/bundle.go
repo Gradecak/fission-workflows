@@ -58,11 +58,11 @@ const (
 	apiGatewayAddress            = ":8080"
 	jaegerTracerServiceName      = "fission.workflows"
 	WorkflowsCacheSize           = 10000
-	InvocationsCacheSize         = 100000
+	InvocationsCacheSize         = 30000
 	executorMaxParallelism       = 1000
 	executorMaxTaskQueueSize     = 100000
 	workflowStorePollInterval    = time.Minute
-	invocationStorePollInterval  = time.Second * 5
+	invocationStorePollInterval  = time.Second * 2
 	workflowSubscriptionBuffer   = 50
 	invocationSubscriptionBuffer = 1000
 )
@@ -481,7 +481,7 @@ func setupWorkflowInvocationCache(app *App, invocationEventPub pubsub.Publisher,
 	projector := projectors.NewWorkflowInvocation()
 	c := cache.NewSubscribedCache(
 		cache.NewLoadingCache(
-			cache.NewLRUCache(InvocationsCacheSize),
+			cache.NewLRUCache(InvocationsCacheSize, "invocation"),
 			backend,
 			projector),
 		projector,
@@ -499,7 +499,7 @@ func setupWorkflowCache(app *App, workflowEventPub pubsub.Publisher, backend fes
 	projector := projectors.NewWorkflow()
 	c := cache.NewSubscribedCache(
 		cache.NewLoadingCache(
-			cache.NewLRUCache(WorkflowsCacheSize),
+			cache.NewLRUCache(WorkflowsCacheSize, "workflow"),
 			backend,
 			projector,
 		),

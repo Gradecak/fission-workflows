@@ -26,15 +26,18 @@ func init() {
 
 type LRUCache struct {
 	contents *lru.Cache
+	//prometheus stuff
+	name string
 }
 
-func NewLRUCache(size int) *LRUCache {
+func NewLRUCache(size int, name string) *LRUCache {
 	c, err := lru.New(size)
 	if err != nil {
 		panic(err)
 	}
 	return &LRUCache{
 		contents: c,
+		name:     name,
 	}
 }
 
@@ -50,6 +53,7 @@ func (c *LRUCache) GetAggregate(a fes.Aggregate) (fes.Entity, error) {
 }
 
 func (c *LRUCache) Put(entity fes.Entity) error {
+	defer cacheCount.WithLabelValues(c.name).Set(float64(c.contents.Len()))
 	if err := fes.ValidateEntity(entity); err != nil {
 		return err
 	}
