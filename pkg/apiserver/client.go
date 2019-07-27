@@ -10,6 +10,7 @@ type Client struct {
 	Admin      AdminAPIClient
 	Invocation WorkflowInvocationAPIClient
 	Workflow   WorkflowAPIClient
+	Consent    ConsentAPIClient
 }
 
 // Await blocks until the gRPC connection has been established
@@ -33,6 +34,7 @@ func NewClient(conn *grpc.ClientConn) *Client {
 		Admin:      NewAdminAPIClient(conn),
 		Invocation: NewWorkflowInvocationAPIClient(conn),
 		Workflow:   NewWorkflowAPIClient(conn),
+		Consent:    NewConsentAPIClient(conn),
 	}
 }
 
