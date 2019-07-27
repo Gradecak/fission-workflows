@@ -2,8 +2,6 @@ package apiserver
 
 import (
 	"fmt"
-	"sort"
-
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/gradecak/fission-workflows/pkg/api"
 	"github.com/gradecak/fission-workflows/pkg/api/projectors"
@@ -14,9 +12,37 @@ import (
 	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/gradecak/fission-workflows/pkg/types/validate"
 	"github.com/gradecak/fission-workflows/pkg/util"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
+	"sort"
+	"time"
 )
+
+var (
+	invocationTime = prometheus.NewSummary(prometheus.SummaryOpts{
+		Namespace: "apiserver",
+		Subsystem: "invocation",
+		Name:      "time",
+		Help:      "Duration of an invocation from start to a finished state.",
+		Objectives: map[float64]float64{
+			0.25: 0.0001,
+			0.5:  0.0001,
+			0.9:  0.0001,
+			1:    0.0001,
+		},
+	})
+	invocationConcurrent = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "apiserver",
+		Subsystem: "invocation",
+		Name:      "concurrent",
+		Help:      "Number of active controllers",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(invocationTime, invocationConcurrent)
+}
 
 // Invocation is responsible for all functionality related to managing invocations.
 type Invocation struct {
@@ -63,6 +89,12 @@ func (gi *Invocation) Invoke(ctx context.Context, spec *types.WorkflowInvocation
 }
 
 func (gi *Invocation) InvokeSync(ctx context.Context, spec *types.WorkflowInvocationSpec) (*types.WorkflowInvocation, error) {
+	invocationConcurrent.Inc()
+	start := time.Now()
+	defer func() {
+		invocationTime.Observe(float64(time.Since(start)))
+		invocationConcurrent.Dec()
+	}()
 	wfi, err := gi.fnenv.InvokeWorkflow(spec, fnenv.WithContext(ctx))
 	if err != nil {
 		return nil, toErrorStatus(err)

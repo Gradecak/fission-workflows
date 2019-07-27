@@ -26,6 +26,8 @@ const (
 	TypeWorkflow   = "workflow"
 	TypeInvocation = "invocation"
 	TypeTaskRun    = "taskrun"
+
+	EvictAfter = time.Minute
 )
 
 // InvocationEvent
@@ -64,6 +66,18 @@ func (m *WorkflowInvocation) Copy() *WorkflowInvocation {
 
 func (m *WorkflowInvocation) Type() string {
 	return TypeInvocation
+}
+
+func (m *WorkflowInvocation) LastUpdated() (time.Time, error) {
+	return m.GetStatus().LastUpdated()
+}
+
+func (m WorkflowInvocation) Evictable() bool {
+	ts, err := m.LastUpdated()
+	if err != nil {
+		return false // cannot determine if we should evict
+	}
+	return time.Since(ts) >= EvictAfter
 }
 
 func (m *WorkflowInvocation) Workflow() *Workflow {
@@ -199,10 +213,6 @@ func (m WorkflowInvocationStatus) Queued() bool {
 	return m.GetStatus() == WorkflowInvocationStatus_SCHEDULED
 }
 
-func (m WorkflowInvocationStatus) Evictable() bool {
-	return m.GetStatus() == WorkflowInvocationStatus_EVICTABLE
-}
-
 func (m WorkflowInvocationStatus) LastUpdated() (time.Time, error) {
 	return ptypes.Timestamp(m.GetUpdatedAt())
 }
@@ -252,15 +262,24 @@ func (m *Task) ID() string {
 	return m.GetMetadata().GetId()
 }
 
-func (m *Task) GetZoneLock() (Zone, bool) {
+func (m *Task) GetZoneLock() (*FnRef, bool) {
 	z := m.GetSpec().GetExecConstraints().GetZoneLock()
-	return z, z != Zone_UNDEF
+	if z != Zone_UNDEF {
+		if ref, err := m.GetZoneVariant(z); err != nil {
+			return ref, true
+		}
+	}
+	return nil, false
 }
 
-func (m *Task) GetZoneHint() (Zone, bool) {
+func (m *Task) GetZoneHint() (*FnRef, bool) {
 	z := m.GetSpec().GetExecConstraints().GetZoneHint()
-	logrus.Debugf("%+v\n", z)
-	return z, z != Zone_UNDEF
+	if z != Zone_UNDEF {
+		if ref, err := m.GetZoneVariant(z); err != nil {
+			return ref, true
+		}
+	}
+	return nil, false
 }
 
 func (m *Task) GetAltFnRefs() []*FnRef {
@@ -272,7 +291,6 @@ func (m *Task) GetAltFnRefs() []*FnRef {
 }
 
 func (m *Task) GetZoneVariant(z Zone) (*FnRef, error) {
-
 	if z == Zone_UNDEF {
 		return nil, fmt.Errorf("Zone provided is undefined")
 	}

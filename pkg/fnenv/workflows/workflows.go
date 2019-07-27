@@ -207,44 +207,44 @@ func (rt *Runtime) awaitReadyWorkflow(ctx context.Context, workflowID string) (w
 }
 
 func (rt *Runtime) awaitInvocationResult(ctx context.Context, invocationID string) (invocation *types.WorkflowInvocation, err error) {
-	if pub, ok := rt.invocations.CacheReader.(pubsub.Publisher); ok {
-		sub := pub.Subscribe(pubsub.SubscriptionOptions{
-			Buffer: 1,
-			LabelMatcher: labels.And(
-				labels.In(fes.PubSubLabelAggregateType, types.TypeInvocation),
-				labels.In(fes.PubSubLabelAggregateID, invocationID),
-				labels.In(fes.PubSubLabelEventType, events.InvocationTerminalEvents...)),
-		})
-		defer pub.Unsubscribe(sub)
-		logrus.Debugf("Listening for termination event for invocation %s", invocationID)
+	// if pub, ok := rt.invocations.CacheReader.(pubsub.Publisher); ok {
+	// 	sub := pub.Subscribe(pubsub.SubscriptionOptions{
+	// 		Buffer: 1,
+	// 		LabelMatcher: labels.And(
+	// 			labels.In(fes.PubSubLabelAggregateType, types.TypeInvocation),
+	// 			labels.In(fes.PubSubLabelAggregateID, invocationID),
+	// 			labels.In(fes.PubSubLabelEventType, events.InvocationTerminalEvents...)),
+	// 	})
+	// 	defer pub.Unsubscribe(sub)
+	// 	logrus.Debugf("Listening for termination event for invocation %s", invocationID)
 
-		// Check the cache once to ensure that we did not miss the terminal event while subscribing
-		if result := rt.checkForInvocationResult(invocationID); result != nil {
-			return result, nil
-		}
+	// 	// Check the cache once to ensure that we did not miss the terminal event while subscribing
+	// 	if result := rt.checkForInvocationResult(invocationID); result != nil {
+	// 		return result, nil
+	// 	}
 
-		// Block until either we received an completion event or the context completed
-		select {
-		case <-ctx.Done():
-			// Check once before cancelling, whether cancelling is needed.
-			if result := rt.checkForInvocationResult(invocationID); result != nil {
-				return result, nil
-			}
+	// 	// Block until either we received an completion event or the context completed
+	// 	select {
+	// 	case <-ctx.Done():
+	// 		// Check once before cancelling, whether cancelling is needed.
+	// 		if result := rt.checkForInvocationResult(invocationID); result != nil {
+	// 			return result, nil
+	// 		}
 
-			// Cancel the invocation
-			err := rt.api.Cancel(invocationID)
-			if err == nil {
-				err = errors.New(api.ErrInvocationCanceled)
-			} else {
-				logrus.Errorf("Failed to cancel invocation: %v", err)
-			}
-			//span.LogKV("error", err)
-			return nil, err
-		case <-sub.Ch:
-			logrus.Debugf("Received terminal event for invocation %s", invocationID)
-			return rt.checkForInvocationResult(invocationID), nil
-		}
-	}
+	// 		// Cancel the invocation
+	// 		err := rt.api.Cancel(invocationID)
+	// 		if err == nil {
+	// 			err = errors.New(api.ErrInvocationCanceled)
+	// 		} else {
+	// 			logrus.Errorf("Failed to cancel invocation: %v", err)
+	// 		}
+	// 		//span.LogKV("error", err)
+	// 		return nil, err
+	// 	case <-sub.Ch:
+	// 		logrus.Debugf("Received terminal event for invocation %s", invocationID)
+	// 		return rt.checkForInvocationResult(invocationID), nil
+	// 	}
+	// }
 
 	// Fallback to polling the cache if the cache does not support pubsub.
 	logrus.Debug("Workflows store does not support pubsub, falling back to polling.")

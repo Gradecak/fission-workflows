@@ -19,12 +19,12 @@ message Node {
         WRITE     = 3;
         CONTROL   = 4;
     }
-    Type type     = 2;
-    Op op         = 3;
+    Type type     = 1;
+    Op op         = 2;
 
-    string meta   = 4;
-    string fnName = 5;
-    string task   = 6;
+    string meta   = 3;
+    string fnName = 4;
+    string task   = 5;
 }
 
 message IDs {

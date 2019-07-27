@@ -107,13 +107,17 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 
 	// Check if the invocation is not in a terminal state
 	if invocation.GetStatus().Finished() {
-		// c.executor.Submit(&executor.Task{
-		// 	TaskID:  invocation.ID() + ".evict",
-		// 	GroupID: invocation.ID(),
-		// 	Apply: func() error {
-		// c.invocationAPI.Evict(invocation.ID())
-		// 	},
-		// })
+		// if provenance is enabled and invocation is a success
+		if c.provenanceAPI != nil {
+			c.executor.Submit(&executor.Task{
+				TaskID:  invocation.ID() + ".prov",
+				GroupID: invocation.ID(),
+				Apply: func() error {
+					return c.provenanceAPI.GenerateProvenance(invocation)
+				},
+			})
+
+		}
 		return ctrl.Done{Msg: fmt.Sprintf("invocation is in a terminal state (%v)",
 			invocation.GetStatus().GetStatus().String())}
 	}
@@ -208,10 +212,6 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 					return c.invocationAPI.Complete(invocation.ID(), output, outputHeaders)
 				},
 			})
-			// if provenance is enabled and invocation is a success
-			if c.provenanceAPI != nil {
-				c.provenanceAPI.GenerateProvenance(invocation)
-			}
 			// invocationDuration.Observe(float64(time.Now().Sub(c.startTime)))
 			return ctrl.Success{Msg: "all tasks of the invocation have completed"}
 		}
@@ -617,17 +617,18 @@ func NewInvocationMetaController(executor *executor.LocalExecutor, invocations *
 	c.sensors = []ctrl.Sensor{
 		NewInvocationNotificationSensor(invocations),
 		NewInvocationStorePollSensor(invocations, cachePollInterval, invocationAPI),
-		NewStalenessPollSensor(c.system, func(ctrlKey string) (fes.Aggregate, fes.Entity, error) {
-			aggregate := fes.Aggregate{
-				Type: types.TypeInvocation,
-				Id:   ctrlKey,
-			}
-			invocation, err := invocations.GetInvocation(ctrlKey)
-			if err != nil {
-				return aggregate, nil, err
-			}
-			return aggregate, invocation, nil
-		}, 100*time.Millisecond, time.Second),
+		// STALENESS POLL SENSOR DEPRECATED
+		// NewStalenessPollSensor(c.system, func(ctrlKey string) (fes.Aggregate, fes.Entity, error) {
+		// 	aggregate := fes.Aggregate{
+		// 		Type: types.TypeInvocation,
+		// 		Id:   ctrlKey,
+		// 	}
+		// 	invocation, err := invocations.GetInvocation(ctrlKey)
+		// 	if err != nil {
+		// 		return aggregate, nil, err
+		// 	}
+		// 	return aggregate, invocation, nil
+		// }, 100*time.Millisecond, time.Second),
 	}
 	return c
 }
@@ -759,13 +760,12 @@ func (s *InvocationStorePollSensor) Poll(evalQueue ctrl.EvalQueue) {
 			continue
 		}
 
-		if wf.GetStatus().Evictable() {
-			// if refresher, ok := s.invocations.CacheReader.(fes.CacheWriter); ok {
-			// 	logrus.Info("Invalidating")
-			// 	refresher.Invalidate(aggregate)
-			// } else {
-			// 	logrus.Warnf("Cache does not support invalidating (key: %v)", aggregate.Format())
-			// }
+		if wf.GetStatus().Finished() && wf.Evictable() {
+			if writer, ok := s.invocations.CacheReader.(fes.CacheWriter); ok {
+				writer.Invalidate(aggregate)
+			} else {
+				logrus.Warnf("Cache does not support invalidating (key: %v)", aggregate.Format())
+			}
 			continue
 		}
 		// Submit evaluation for the workflow invocation The workqueue

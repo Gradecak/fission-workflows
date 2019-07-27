@@ -58,12 +58,12 @@ const (
 	apiGatewayAddress            = ":8080"
 	jaegerTracerServiceName      = "fission.workflows"
 	WorkflowsCacheSize           = 10000
-	InvocationsCacheSize         = 30000
+	InvocationsCacheSize         = 100000
 	executorMaxParallelism       = 1000
 	executorMaxTaskQueueSize     = 100000
 	workflowStorePollInterval    = time.Minute
-	invocationStorePollInterval  = time.Second * 2
-	workflowSubscriptionBuffer   = 50
+	invocationStorePollInterval  = time.Second * 1
+	workflowSubscriptionBuffer   = 100
 	invocationSubscriptionBuffer = 1000
 )
 
@@ -114,7 +114,8 @@ type Options struct {
 	InternalRuntime      bool
 	InvocationController bool
 	WorkflowController   bool
-	Dataflow             bool
+	Consent              bool
+	Provenance           bool
 	AdminAPI             bool
 	ConsentAPI           bool
 	WorkflowAPI          bool
@@ -281,20 +282,20 @@ func Run(ctx context.Context, opts *Options) error {
 	extensions := &DataflowApiExtensions{}
 	if opts.InvocationController {
 		log.Info("Running invocation controller")
-		if opts.Dataflow {
-			log.Info("Dataflow extensions enabled")
+		if opts.Provenance {
 			if opts.ProvNats {
 				extensions.provenance = setupProvenanceNatsAPI(*opts.NATS)
 			} else {
+				log.Info("USING FILE PROV")
 				extensions.provenance = setupProvenanceFileAPI()
 			}
-
+		}
+		if opts.Consent {
 			if opts.ConsentNats {
 				extensions.consent = setupConsentNatsAPI(*opts.NATS)
 			} else {
 				extensions.consent = setupConsentMemAPI()
 			}
-
 			// start the NATS subscription for consent events
 			extensions.consent.WatchConsent()
 		}

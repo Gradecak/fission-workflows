@@ -53,7 +53,8 @@ func main() {
 			InternalRuntime:      c.Bool("internal"),
 			InvocationController: c.Bool("controller") || c.Bool("invocation-controller"),
 			WorkflowController:   c.Bool("controller") || c.Bool("workflow-con0troller"),
-			Dataflow:             c.Bool("dataflow"),
+			Consent:              c.Bool("consent"),
+			Provenance:           c.Bool("provenance"),
 			AdminAPI:             c.Bool("api") || c.Bool("api-admin"),
 			WorkflowAPI:          c.Bool("api") || c.Bool("api-workflow"),
 			ConsentAPI:           c.Bool("api") || c.Bool("api-consent"),
@@ -94,7 +95,7 @@ func parseFissionOptions(c *cli.Context) *bundle.FissionOptions {
 func parseNatsOptions(c *cli.Context) *nats.Config {
 	// since dataflows utilises nats config, ensure opts are only nil if both
 	// are disabled
-	if !c.Bool("nats") && !c.Bool("dataflow") {
+	if !c.Bool("nats") && !c.Bool("prov-nats") && !c.Bool("consent") {
 		return nil
 	}
 
@@ -154,8 +155,12 @@ func createCli() *cli.App {
 		},
 		// Dataflow specifics
 		cli.BoolFlag{
-			Name:  "dataflow",
-			Usage: "Enable data privacy specific aspects of Fission Workflows",
+			Name:  "consent",
+			Usage: "Enable consent verification on workflow execution",
+		},
+		cli.BoolFlag{
+			Name:  "provenance",
+			Usage: "Enable provenance generation on completed workflows",
 		},
 		// Fission Environment Proxy
 		cli.BoolFlag{

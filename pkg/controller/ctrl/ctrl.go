@@ -164,6 +164,9 @@ func (s *System) DeleteController(key string) {
 	s.ctrlsMu.Lock()
 	delete(s.ctrls, key)
 	s.ctrlsMu.Unlock()
+	s.ctrlStatsMu.Lock()
+	delete(s.ctrlStats, key)
+	s.ctrlStatsMu.Unlock()
 }
 
 func (s *System) AddController(key string, ctrl Controller) {
