@@ -2,17 +2,16 @@ package scheduler
 
 import (
 	"fmt"
+	math "math"
 	"time"
+
+	"math/rand"
+	"sync"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/gradecak/fission-workflows/pkg/types"
 	"github.com/gradecak/fission-workflows/pkg/types/graph"
-	"sync"
-	// "github.com/sirupsen/logrus"
-	"math/rand"
 )
-
-var DefaultPolicy = NewHorizonPolicy()
 
 // HorizonPolicy is the default policy of the workflow engine. It solely schedules tasks that are on the scheduling horizon.
 //
@@ -200,7 +199,7 @@ func (p *HorizonMultiZonePolicy) Evaluate(invocation *types.WorkflowInvocation) 
 				// Run time zone hints take precedence over hone hints
 				// provided in spec
 				target = ref
-			} else if ref, ok := task.GetZoneHint(); !ok {
+			} else if ref, ok := task.GetZoneHint(); ok {
 				// fall back on workflow spec specified zone hint
 				target = ref
 			} else {
@@ -235,10 +234,15 @@ func NewMzHorizonLRUWarmPolicy() *MzHorizonLRUWarmPolicy {
 		random:      rand.New(seed),
 		envsMu:      &sync.Mutex{},
 		envs:        make(map[*types.FnRef]time.Time),
-		warmTimeout: time.Millisecond * 200,
-		avgExecTime: time.Millisecond * 800,
+		warmTimeout: time.Minute * 2,
+		avgExecTime: time.Second * 1,
 	}
 }
+
+// type FnRank struct {
+// 	ref  *types.FnRef
+// 	rank float64
+// }
 
 func (p *MzHorizonLRUWarmPolicy) Evaluate(invocation *types.WorkflowInvocation) (*Schedule, error) {
 	schedule := &Schedule{InvocationId: invocation.ID(), CreatedAt: ptypes.TimestampNow()}
@@ -265,6 +269,87 @@ func (p *MzHorizonLRUWarmPolicy) Evaluate(invocation *types.WorkflowInvocation) 
 		taskAction := newRunTaskAction(task.ID())
 		p.envsMu.Lock()
 		// set the preferred function execution environment
+		var rankedRef = struct {
+			fn   *types.FnRef
+			rank float64
+		}{
+			fn:   nil,
+			rank: math.MaxFloat64,
+		}
+		if task.GetSpec().GetExecConstraints().GetMultiZone() {
+			if rf, ok := task.GetZoneLock(); ok {
+				// if zone lock is specified in spec use that
+				rankedRef.fn = rf
+			} else if ref, ok := invocation.GetPreferredZone(task); ok {
+				// Run time zone hints take precedence over hone hints
+				// provided in spec
+				rankedRef.fn = ref
+			} else if ref, ok := task.GetZoneHint(); ok {
+				// fall back on workflow spec specified zone hint
+				rankedRef.fn = ref
+			} else {
+				refs := task.GetAltFnRefs()
+				for _, r := range refs {
+					if lastUsed, ok := p.envs[r]; ok {
+						var rank float64 = (0.5 * float64(p.warmTimeout/time.Since(lastUsed))) +
+							(0.5 * float64(time.Since(lastUsed)/p.avgExecTime))
+						if rank < rankedRef.rank {
+							rankedRef.rank = rank
+							rankedRef.fn = r
+						}
+					}
+				}
+			}
+		}
+		// update count for that particular fnRef
+		p.envs[rankedRef.fn] = time.Now()
+		p.envsMu.Unlock()
+		taskAction.Pref = rankedRef.fn //target
+		schedule.AddRunTask(taskAction)
+	}
+
+	return schedule, nil
+}
+
+type MzHorizonLRUPolicy struct {
+	random *rand.Rand
+	envsMu *sync.Mutex
+	envs   map[string]*types.FnRef
+}
+
+func NewMzHorizonLRUPolicy() *MzHorizonLRUPolicy {
+	seed := rand.NewSource(time.Now().Unix())
+	return &MzHorizonLRUPolicy{
+		random: rand.New(seed),
+		envsMu: &sync.Mutex{},
+		envs:   make(map[string]*types.FnRef),
+	}
+}
+
+func (p *MzHorizonLRUPolicy) Evaluate(invocation *types.WorkflowInvocation) (*Schedule, error) {
+	schedule := &Schedule{InvocationId: invocation.ID(), CreatedAt: ptypes.TimestampNow()}
+
+	// If there are failed tasks halt the workflow
+	if failedTasks := getFailedTasks(invocation); len(failedTasks) > 0 {
+		for _, failedTask := range failedTasks {
+			msg := fmt.Sprintf("Task '%v' failed", failedTask.ID())
+			if err := failedTask.GetStatus().GetError(); err != nil {
+				msg = err.Message
+			}
+			schedule.Abort = newAbortAction(msg)
+		}
+		return schedule, nil
+	}
+
+	// Find and schedule all tasks on the scheduling horizon
+	openTasks := getOpenTasks(invocation)
+	depGraph := graph.Parse(graph.NewTaskInstanceIterator(openTasks))
+	horizon := graph.Roots(depGraph)
+
+	for _, node := range horizon {
+		task := node.(*graph.TaskInvocationNode).Task()
+		taskAction := newRunTaskAction(task.ID())
+		// set the preferred function execution environment
 		var target *types.FnRef
 		if task.GetSpec().GetExecConstraints().GetMultiZone() {
 			if rf, ok := task.GetZoneLock(); ok {
@@ -274,36 +359,20 @@ func (p *MzHorizonLRUWarmPolicy) Evaluate(invocation *types.WorkflowInvocation) 
 				// Run time zone hints take precedence over hone hints
 				// provided in spec
 				target = ref
-			} else if ref, ok := task.GetZoneHint(); !ok {
+			} else if ref, ok := task.GetZoneHint(); ok {
 				// fall back on workflow spec specified zone hint
 				target = ref
 			} else {
-				refs := task.GetAltFnRefs()
-				var lru *types.FnRef
-				for _, r := range refs {
-					if lastUsed, ok := p.envs[r]; ok {
-						if time.Since(lastUsed) > p.warmTimeout ||
-							time.Since(lastUsed) < p.avgExecTime {
-							continue
-						} else {
-							if lru == nil {
-								lru = r
-							} else if p.envs[lru].After(p.envs[r]) {
-								lru = r
-							}
-						}
-					}
-				}
-				if lru == nil {
-					target = refs[p.random.Intn(len(refs))]
+				if fnref, ok := p.envs[task.Status.GetBaseFnName()]; ok {
+					target = fnref
 				} else {
-					target = lru
+					target = task.GetAltFnRefs()[0]
 				}
 			}
-
 		}
 		// update count for that particular fnRef
-		p.envs[target] = time.Now()
+		p.envsMu.Lock()
+		p.envs[task.Status.GetBaseFnName()] = target
 		p.envsMu.Unlock()
 		taskAction.Pref = target
 		schedule.AddRunTask(taskAction)
@@ -361,7 +430,7 @@ func (p *MzHorizonRRPolicy) Evaluate(invocation *types.WorkflowInvocation) (*Sch
 				// Run time zone hints take precedence over hone hints
 				// provided in spec
 				target = ref
-			} else if ref, ok := task.GetZoneHint(); !ok {
+			} else if ref, ok := task.GetZoneHint(); ok {
 				// fall back on workflow spec specified zone hint
 				target = ref
 			} else {

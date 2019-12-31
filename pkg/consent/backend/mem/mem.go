@@ -34,5 +34,6 @@ func (cb Store) Get(cid consent.ID) *types.ConsentStatus {
 }
 
 func (cb Store) Listen() {
-	// TODO
+	// nop
+	// consent revocation is done via apiserver with memory store
 }

@@ -30,7 +30,7 @@ var (
 		Name:      "scheduled",
 		Help:      "Number of scheduled",
 	})
-	invocationTime = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	InvocationTime = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Namespace: "invocation",
 		Subsystem: "monitor",
 		Name:      "time",
@@ -49,7 +49,7 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(monitorScheduledCount, monitorActiveCount, invocationTime)
+	prometheus.MustRegister(monitorScheduledCount, monitorActiveCount, InvocationTime)
 }
 
 func NewInvocationMonitor() *InvocationMonitor {
@@ -86,7 +86,7 @@ func (m *InvocationMonitor) RunQueued(invID string) {
 
 		defer func() {
 			monitorScheduledCount.Set(float64(m.queuedCount))
-			invocationTime.WithLabelValues("queued").Observe(float64(time.Since(t)))
+			InvocationTime.WithLabelValues("queued").Observe(float64(time.Since(t)))
 			monitorActiveCount.Set(float64(m.activeCount))
 		}()
 	}
@@ -101,7 +101,7 @@ func (m *InvocationMonitor) Remove(invID string) {
 		delete(m.queuedInvocations, invID)
 		m.queuedCount--
 		monitorScheduledCount.Set(float64(m.queuedCount))
-		invocationTime.WithLabelValues("queued").Observe(float64(time.Since(t)))
+		InvocationTime.WithLabelValues("queued").Observe(float64(time.Since(t)))
 		m.queuedMu.Unlock()
 		return
 	}
@@ -113,7 +113,7 @@ func (m *InvocationMonitor) Remove(invID string) {
 		delete(m.activeInvocations, invID)
 		m.activeCount--
 		monitorActiveCount.Set(float64(m.activeCount))
-		invocationTime.WithLabelValues("running").Observe(float64(time.Since(t)))
+		InvocationTime.WithLabelValues("running").Observe(float64(time.Since(t)))
 		m.activeMu.Unlock()
 		return
 	}

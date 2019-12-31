@@ -38,12 +38,13 @@ import (
 	"github.com/gradecak/fission-workflows/pkg/util/labels"
 	"github.com/gradecak/fission-workflows/pkg/util/pubsub"
 	"github.com/gradecak/fission-workflows/pkg/version"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	grpcruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	grpc_opentracing "github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/uber/jaeger-client-go"
@@ -286,7 +287,6 @@ func Run(ctx context.Context, opts *Options) error {
 			if opts.ProvNats {
 				extensions.provenance = setupProvenanceNatsAPI(*opts.NATS)
 			} else {
-				log.Info("USING FILE PROV")
 				extensions.provenance = setupProvenanceFileAPI()
 			}
 		}
@@ -388,6 +388,25 @@ func Run(ctx context.Context, opts *Options) error {
 
 		httpApiSrv := &http.Server{Addr: apiGatewayAddress}
 		httpMux.Handle("/", handlers.LoggingHandler(os.Stdout, tracingWrapper(grpcMux)))
+		// small hack to reset collected metrics for invocation monitor time
+		httpMux.HandleFunc("/reset-metrics", func(w http.ResponseWriter, r *http.Request) {
+			if !monitor.InvocationTime.Delete(prometheus.Labels{"type": "running"}) {
+				log.Info("Error Deleting Values")
+				http.Error(w, "Couldnt unregister monitor", http.StatusInternalServerError)
+			}
+			log.Info("Deleted")
+			// log.Info("Resetting Metrics")
+			// if !prometheus.Unregister(monitor.InvocationTime) {
+			// 	http.Error(w, "Couldnt unregister monitor", http.StatusInternalServerError)
+			// }
+			// err := prometheus.Register(monitor.InvocationTime)
+			// if err != nil {
+			// 	http.Error(w, "Couldnt register monitor", http.StatusInternalServerError)
+			// }
+			// log.Info("Done")
+			// return
+		})
+
 		httpApiSrv.Handler = httpMux
 		go func() {
 			err := httpApiSrv.ListenAndServe()

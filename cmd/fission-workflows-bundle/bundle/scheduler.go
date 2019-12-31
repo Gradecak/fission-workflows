@@ -22,8 +22,11 @@ var schedulerPolicies = map[string]func(time.Duration) scheduler.Policy{
 	"prewarm-horizon": func(coldStartModel time.Duration) scheduler.Policy {
 		return scheduler.Policy(scheduler.NewPrewarmHorizonPolicy(coldStartModel))
 	},
-	"horizon":    func(_ time.Duration) scheduler.Policy { return scheduler.Policy(scheduler.NewHorizonPolicy()) },
-	"horizon-mz": func(_ time.Duration) scheduler.Policy { return scheduler.Policy(scheduler.NewHorizonMZPolicy()) },
+	"horizon":          func(_ time.Duration) scheduler.Policy { return scheduler.Policy(scheduler.NewHorizonPolicy()) },
+	"horizon-mz":       func(_ time.Duration) scheduler.Policy { return scheduler.Policy(scheduler.NewHorizonMZPolicy()) },
+	"horizon-mz-lru-w": func(_ time.Duration) scheduler.Policy { return scheduler.Policy(scheduler.NewMzHorizonLRUWarmPolicy()) },
+	"horizon-mz-lru":   func(_ time.Duration) scheduler.Policy { return scheduler.Policy(scheduler.NewMzHorizonLRUPolicy()) },
+	"horizon-mz-rr":    func(_ time.Duration) scheduler.Policy { return scheduler.Policy(scheduler.NewMzHorizonRRPolicy()) },
 }
 
 func ParseSchedulerConfig(c *cli.Context) (scheduler.Policy, error) {

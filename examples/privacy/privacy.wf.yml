@@ -6,8 +6,10 @@ tasks:
     inputs:
       headers:
         X-CustomFn: "tr"
-    execOpts:
-      multizone: true
+      query:
+        runtime: "3"
+    # execOpts:
+    #   multizone: true
 
 dataflow:
   consentCheck: true

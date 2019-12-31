@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gradecak/fission-workflows/pkg/consent"
 	"github.com/gradecak/fission-workflows/pkg/types"
+	"time"
 	//"github.com/sirupsen/logrus"
 )
 
@@ -36,5 +37,6 @@ func (capi *Consent) WatchConsent() {
 func (capi *Consent) QueryWorkflowConsent(spec *types.WorkflowInvocationSpec) *types.ConsentStatus {
 	consentId := spec.GetConsentId()
 	status := capi.Get(consentId)
+	time.Sleep(time.Millisecond * 50)
 	return status
 }

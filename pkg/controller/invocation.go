@@ -107,17 +107,6 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 
 	// Check if the invocation is not in a terminal state
 	if invocation.GetStatus().Finished() {
-		// if provenance is enabled and invocation is a success
-		if c.provenanceAPI != nil {
-			c.executor.Submit(&executor.Task{
-				TaskID:  invocation.ID() + ".prov",
-				GroupID: invocation.ID(),
-				Apply: func() error {
-					return c.provenanceAPI.GenerateProvenance(invocation)
-				},
-			})
-
-		}
 		return ctrl.Done{Msg: fmt.Sprintf("invocation is in a terminal state (%v)",
 			invocation.GetStatus().GetStatus().String())}
 	}
@@ -212,6 +201,17 @@ func (c *InvocationController) Eval(ctx context.Context, processValue *ctrl.Even
 					return c.invocationAPI.Complete(invocation.ID(), output, outputHeaders)
 				},
 			})
+			// if provenance is enabled and invocation is a success
+			if c.provenanceAPI != nil {
+				c.executor.Submit(&executor.Task{
+					TaskID:  invocation.ID() + ".prov",
+					GroupID: invocation.ID(),
+					Apply: func() error {
+						return c.provenanceAPI.GenerateProvenance(invocation)
+					},
+				})
+
+			}
 			// invocationDuration.Observe(float64(time.Now().Sub(c.startTime)))
 			return ctrl.Success{Msg: "all tasks of the invocation have completed"}
 		}
